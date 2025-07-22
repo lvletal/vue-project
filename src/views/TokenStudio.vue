@@ -498,15 +498,58 @@ const connectFigma = async () => {
       syncStatus.value = 'success'
       showNotification('Successfully connected to Figma! (Test Mode)', 'success')
       
-      // 테스트 토큰 로드
-      const tokens = figmaService.getTestTokens()
-      colorTokens.value = tokens.map(token => ({
-        name: token.name,
-        value: token.value,
-        category: 'color' as const
-      }))
-      
-      console.log('🎨 Figma 테스트 토큰 로드 완료:', tokens.length)
+      // 실제 tokens.json 파일에서 토큰 로드
+      try {
+        const response = await fetch('/tokens.json')
+        if (response.ok) {
+          const tokensData = await response.json()
+          
+          // Primary 색상 토큰들을 추출
+          const primaryTokens: DesignToken[] = []
+          if (tokensData.global && tokensData.global.primary) {
+            Object.entries(tokensData.global.primary).forEach(([key, token]: [string, any]) => {
+              primaryTokens.push({
+                name: `Primary ${key}`,
+                value: token.value,
+                category: 'color' as const
+              })
+            })
+          }
+          
+          // FigmaSet의 Primary 토큰들도 추가
+          if (tokensData.FigmaSet && tokensData.FigmaSet.Primary) {
+            Object.entries(tokensData.FigmaSet.Primary).forEach(([key, token]: [string, any]) => {
+              primaryTokens.push({
+                name: `Primary / ${key}`,
+                value: token.value,
+                category: 'color' as const
+              })
+            })
+          }
+          
+          colorTokens.value = primaryTokens
+          console.log('🎨 tokens.json에서 토큰 로드 완료:', primaryTokens.length)
+          console.log('📊 888 업데이트된 토큰들:', primaryTokens.filter(t => t.value === '#888888'))
+        } else {
+          // fallback: 테스트 토큰 사용
+          const tokens = figmaService.getTestTokens()
+          colorTokens.value = tokens.map(token => ({
+            name: token.name,
+            value: token.value,
+            category: 'color' as const
+          }))
+          console.log('🎨 Figma 테스트 토큰 로드 완료 (fallback):', tokens.length)
+        }
+      } catch (error) {
+        console.error('❌ tokens.json 로드 실패, 테스트 토큰 사용:', error)
+        // fallback: 테스트 토큰 사용
+        const tokens = figmaService.getTestTokens()
+        colorTokens.value = tokens.map(token => ({
+          name: token.name,
+          value: token.value,
+          category: 'color' as const
+        }))
+      }
     } else {
       syncStatus.value = 'error'
       showNotification('Failed to connect to Figma', 'error')
@@ -753,22 +796,7 @@ const startRealtimeSync = async () => {
   }
 
   try {
-    await figmaService.startRealtimeSync((tokens) => {
-      // Figma에서 변경된 토큰을 받아서 업데이트
-      tokens.forEach(figmaToken => {
-        if (figmaToken.type === 'color') {
-          const existingToken = colorTokens.value.find(t => t.name === figmaToken.name)
-          if (existingToken) {
-            existingToken.value = figmaToken.value
-            existingToken.figmaId = figmaToken.id
-          }
-        }
-      })
-      
-      lastSyncTime.value = new Date().toLocaleString()
-      syncStatus.value = 'success'
-      showNotification('Tokens updated from Figma in real-time!', 'success')
-    })
+    figmaService.startRealtimeSync()
     
     realtimeSyncEnabled.value = true
     showNotification('Realtime sync started!', 'success')

@@ -36,7 +36,7 @@ class FigmaService {
   private syncInterval: NodeJS.Timeout | null = null
   private lastModified: string = ''
 
-  // 테스트용 색상 토큰들 (Figma에서 추출)
+  // 테스트용 색상 토큰들 (Figma에서 추출 - 888 업데이트 반영)
   private testTokens: FigmaToken[] = [
     {
       id: 'primary-10',
@@ -90,16 +90,16 @@ class FigmaService {
     {
       id: 'primary-80',
       name: 'Primary / 80',
-      value: '#FF070C',
+      value: '#888888',
       type: 'color',
-      description: 'Primary color with 80% opacity'
+      description: 'Primary color with 80% opacity (Updated to 888)'
     },
     {
       id: 'primary-90',
       name: 'Primary / 90',
-      value: '#1E3A8A',
+      value: '#888888',
       type: 'color',
-      description: 'Primary color with 90% opacity'
+      description: 'Primary color with 90% opacity (Updated to 888)'
     },
     {
       id: 'primary-100',

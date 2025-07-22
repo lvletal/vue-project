@@ -34,7 +34,8 @@
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Connection Status -->
-      <div class="mb-8">
+      <div class="mb-8 space-y-4">
+        <!-- Figma Connection -->
         <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-4">
@@ -55,6 +56,79 @@
             >
               {{ figmaConnected ? 'Disconnect' : 'Connect Figma' }}
             </button>
+          </div>
+        </div>
+
+        <!-- MCP Connection -->
+        <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center space-x-2">
+              <div :class="mcpConnected ? 'bg-green-500' : 'bg-red-500'" class="w-3 h-3 rounded-full"></div>
+              <span class="text-white font-medium">
+                {{ mcpStatusText }}
+              </span>
+            </div>
+            <div class="flex space-x-2">
+              <button 
+                v-if="!mcpConnected"
+                @click="connectMCP" 
+                class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+              >
+                Connect MCP
+              </button>
+              <button 
+                v-if="mcpConnected && !realtimeSyncEnabled"
+                @click="startRealtimeSync" 
+                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+              >
+                Start Realtime Sync
+              </button>
+              <button 
+                v-if="realtimeSyncEnabled"
+                @click="stopRealtimeSync" 
+                class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+              >
+                Stop Sync
+              </button>
+              <button 
+                v-if="mcpConnected"
+                @click="disconnectMCP" 
+                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+              >
+                Disconnect
+              </button>
+            </div>
+          </div>
+          
+          <!-- MCP Connection Form -->
+          <div v-if="!mcpConnected" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-white text-sm font-medium mb-2">MCP Server URL</label>
+              <input 
+                v-model="mcpServerUrl"
+                type="url" 
+                placeholder="https://your-mcp-server.com"
+                class="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+            <div>
+              <label class="block text-white text-sm font-medium mb-2">API Key</label>
+              <input 
+                v-model="mcpApiKey"
+                type="password" 
+                placeholder="Your MCP API key"
+                class="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+            <div>
+              <label class="block text-white text-sm font-medium mb-2">Project ID</label>
+              <input 
+                v-model="mcpProjectId"
+                type="text" 
+                placeholder="your-project-id"
+                class="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -216,8 +290,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { figmaService, type FigmaToken as FigmaTokenType } from '../services/figmaService'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { figmaService, type FigmaToken as FigmaTokenType, type MCPConnection } from '../services/figmaService'
 
 interface DesignToken {
   name: string
@@ -233,6 +307,13 @@ const lastSyncTime = ref('')
 const syncStatus = ref<'idle' | 'syncing' | 'success' | 'error'>('idle')
 const editingToken = ref<DesignToken | null>(null)
 const originalToken = ref<DesignToken | null>(null)
+
+// MCP State
+const mcpConnected = ref(false)
+const mcpServerUrl = ref('')
+const mcpApiKey = ref('')
+const mcpProjectId = ref('')
+const realtimeSyncEnabled = ref(false)
 
 // Design Tokens
 const colorTokens = ref<DesignToken[]>([
@@ -371,6 +452,17 @@ const syncStatusText = computed(() => {
     case 'success': return 'Synced successfully'
     case 'error': return 'Sync failed'
     default: return 'Ready to sync'
+  }
+})
+
+// MCP 연결 상태 텍스트
+const mcpStatusText = computed(() => {
+  if (mcpConnected.value && realtimeSyncEnabled.value) {
+    return 'Realtime Sync Active'
+  } else if (mcpConnected.value) {
+    return 'Connected'
+  } else {
+    return 'Not Connected'
   }
 })
 
@@ -619,9 +711,81 @@ const showNotification = (message: string, type: 'success' | 'error' | 'info') =
   console.log(`${type.toUpperCase()}: ${message}`)
 }
 
+// MCP 연결 함수
+const connectMCP = async () => {
+  if (!mcpServerUrl.value || !mcpApiKey.value || !mcpProjectId.value) {
+    showNotification('Please fill in all MCP connection details', 'error')
+    return
+  }
+
+  try {
+    await figmaService.connectMCP(mcpServerUrl.value, mcpApiKey.value, mcpProjectId.value)
+    mcpConnected.value = true
+    showNotification('Successfully connected to MCP server!', 'success')
+  } catch (error) {
+    showNotification('Failed to connect to MCP server', 'error')
+  }
+}
+
+// 실시간 동기화 시작
+const startRealtimeSync = async () => {
+  if (!figmaConnected.value || !mcpConnected.value) {
+    showNotification('Please connect to both Figma and MCP first', 'error')
+    return
+  }
+
+  try {
+    await figmaService.startRealtimeSync((tokens) => {
+      // Figma에서 변경된 토큰을 받아서 업데이트
+      tokens.forEach(figmaToken => {
+        if (figmaToken.type === 'color') {
+          const existingToken = colorTokens.value.find(t => t.name === figmaToken.name)
+          if (existingToken) {
+            existingToken.value = figmaToken.value
+            existingToken.figmaId = figmaToken.id
+          }
+        }
+      })
+      
+      lastSyncTime.value = new Date().toLocaleString()
+      syncStatus.value = 'success'
+      showNotification('Tokens updated from Figma in real-time!', 'success')
+    })
+    
+    realtimeSyncEnabled.value = true
+    showNotification('Realtime sync started!', 'success')
+  } catch (error) {
+    showNotification('Failed to start realtime sync', 'error')
+  }
+}
+
+// 실시간 동기화 중지
+const stopRealtimeSync = () => {
+  figmaService.stopRealtimeSync()
+  realtimeSyncEnabled.value = false
+  showNotification('Realtime sync stopped', 'info')
+}
+
+// MCP 연결 해제
+const disconnectMCP = () => {
+  stopRealtimeSync()
+  mcpConnected.value = false
+  mcpServerUrl.value = ''
+  mcpApiKey.value = ''
+  mcpProjectId.value = ''
+  showNotification('Disconnected from MCP server', 'info')
+}
+
 // Lifecycle
 onMounted(() => {
   // Initialize with some default state
   lastSyncTime.value = ''
+})
+
+onUnmounted(() => {
+  // Cleanup realtime sync on component unmount
+  if (realtimeSyncEnabled.value) {
+    figmaService.stopRealtimeSync()
+  }
 })
 </script> 

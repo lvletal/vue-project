@@ -1,4 +1,4 @@
-// Figma API Service
+// Figma API Service with MCP Integration
 // 실제 Figma API 연동을 위한 서비스
 
 interface FigmaToken {
@@ -22,10 +22,19 @@ interface FigmaConnection {
   fileName: string
 }
 
+interface MCPConnection {
+  serverUrl: string
+  apiKey: string
+  projectId: string
+}
+
 class FigmaService {
   private accessToken: string = ''
   private fileKey: string = ''
   private baseUrl: string = 'https://api.figma.com/v1'
+  private mcpConnection: MCPConnection | null = null
+  private syncInterval: NodeJS.Timeout | null = null
+  private lastModified: string = ''
 
   // Figma 연결 설정
   async connect(accessToken: string, fileKey: string): Promise<FigmaConnection> {
@@ -35,6 +44,7 @@ class FigmaService {
 
       // 파일 정보 가져오기
       const fileInfo = await this.getFileInfo(fileKey)
+      this.lastModified = fileInfo.lastModified
       
       return {
         accessToken,
@@ -43,6 +53,33 @@ class FigmaService {
       }
     } catch (error) {
       throw new Error(`Failed to connect to Figma: ${error}`)
+    }
+  }
+
+  // MCP 서버 연결 설정
+  async connectMCP(serverUrl: string, apiKey: string, projectId: string): Promise<MCPConnection> {
+    try {
+      this.mcpConnection = {
+        serverUrl,
+        apiKey,
+        projectId
+      }
+
+      // MCP 서버 연결 테스트
+      const response = await fetch(`${serverUrl}/health`, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error('MCP server connection failed')
+      }
+
+      return this.mcpConnection
+    } catch (error) {
+      throw new Error(`Failed to connect to MCP: ${error}`)
     }
   }
 
@@ -65,6 +102,70 @@ class FigmaService {
       name: data.name,
       lastModified: data.lastModified,
       thumbnailUrl: data.thumbnailUrl
+    }
+  }
+
+  // 실시간 동기화 시작
+  async startRealtimeSync(callback: (tokens: FigmaToken[]) => void): Promise<void> {
+    if (!this.accessToken || !this.fileKey) {
+      throw new Error('Figma connection not established')
+    }
+
+    // 30초마다 파일 변경 확인
+    this.syncInterval = setInterval(async () => {
+      try {
+        const fileInfo = await this.getFileInfo(this.fileKey)
+        
+        // 파일이 변경되었는지 확인
+        if (fileInfo.lastModified !== this.lastModified) {
+          console.log('Figma file changed, updating tokens...')
+          
+          // 새로운 토큰 추출
+          const tokens = await this.extractTokens(this.fileKey)
+          this.lastModified = fileInfo.lastModified
+          
+          // MCP 서버에 업데이트 전송
+          if (this.mcpConnection) {
+            await this.updateMCPTokens(tokens)
+          }
+          
+          // 콜백 실행
+          callback(tokens)
+        }
+      } catch (error) {
+        console.error('Realtime sync error:', error)
+      }
+    }, 30000) // 30초마다 체크
+  }
+
+  // MCP 서버에 토큰 업데이트
+  async updateMCPTokens(tokens: FigmaToken[]): Promise<void> {
+    if (!this.mcpConnection) {
+      throw new Error('MCP connection not established')
+    }
+
+    try {
+      const response = await fetch(`${this.mcpConnection.serverUrl}/tokens/update`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.mcpConnection.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          projectId: this.mcpConnection.projectId,
+          tokens,
+          source: 'figma',
+          timestamp: new Date().toISOString()
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`MCP update failed: ${response.statusText}`)
+      }
+
+      console.log('Tokens updated in MCP server')
+    } catch (error) {
+      console.error('MCP update error:', error)
     }
   }
 
@@ -200,30 +301,32 @@ class FigmaService {
     // })
   }
 
-  // 실시간 동기화 설정
-  async setupRealtimeSync(fileKey: string, callback: (tokens: FigmaToken[]) => void): Promise<void> {
-    // WebSocket이나 Polling을 사용한 실시간 동기화
-    // 실제 구현에서는 Figma의 실시간 API를 사용해야 합니다
-    
-    setInterval(async () => {
-      try {
-        const tokens = await this.extractTokens(fileKey)
-        callback(tokens)
-      } catch (error) {
-        console.error('Realtime sync error:', error)
-      }
-    }, 30000) // 30초마다 체크
+  // 실시간 동기화 중지
+  stopRealtimeSync(): void {
+    if (this.syncInterval) {
+      clearInterval(this.syncInterval)
+      this.syncInterval = null
+      console.log('Realtime sync stopped')
+    }
   }
 
   // 연결 해제
   disconnect(): void {
+    this.stopRealtimeSync()
     this.accessToken = ''
     this.fileKey = ''
+    this.mcpConnection = null
+    this.lastModified = ''
   }
 
   // 연결 상태 확인
   isConnected(): boolean {
     return !!(this.accessToken && this.fileKey)
+  }
+
+  // MCP 연결 상태 확인
+  isMCPConnected(): boolean {
+    return !!this.mcpConnection
   }
 }
 
@@ -231,4 +334,4 @@ class FigmaService {
 export const figmaService = new FigmaService()
 
 // 타입 내보내기
-export type { FigmaToken, FigmaFile, FigmaConnection } 
+export type { FigmaToken, FigmaFile, FigmaConnection, MCPConnection } 

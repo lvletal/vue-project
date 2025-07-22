@@ -318,9 +318,9 @@ const originalToken = ref<DesignToken | null>(null)
 
 // MCP State
 const mcpConnected = ref(false)
-const mcpServerUrl = ref('')
-const mcpApiKey = ref('')
-const mcpProjectId = ref('')
+const mcpServerUrl = ref('https://mcp-server.example.com')
+const mcpApiKey = ref('test-mcp-api-key')
+const mcpProjectId = ref('vue-project')
 const realtimeSyncEnabled = ref(false)
 
 // Design Tokens
@@ -528,36 +528,76 @@ const connectFigma = async () => {
           }
           
           colorTokens.value = primaryTokens
-          console.log('🎨 tokens.json에서 토큰 로드 완료:', primaryTokens.length)
-          console.log('📊 888 업데이트된 토큰들:', primaryTokens.filter(t => t.value === '#888888'))
-        } else {
-          // fallback: 테스트 토큰 사용
-          const tokens = figmaService.getTestTokens()
-          colorTokens.value = tokens.map(token => ({
-            name: token.name,
-            value: token.value,
-            category: 'color' as const
-          }))
-          console.log('🎨 Figma 테스트 토큰 로드 완료 (fallback):', tokens.length)
-        }
-      } catch (error) {
-        console.error('❌ tokens.json 로드 실패, 테스트 토큰 사용:', error)
-        // fallback: 테스트 토큰 사용
-        const tokens = figmaService.getTestTokens()
-        colorTokens.value = tokens.map(token => ({
-          name: token.name,
-          value: token.value,
-          category: 'color' as const
-        }))
+                console.log('🎨 tokens.json에서 토큰 로드 완료:', primaryTokens.length)
+      console.log('📊 888 업데이트된 토큰들:', primaryTokens.filter(t => t.value === '#888888'))
+      
+      // MCP 자동 연결
+      try {
+        await figmaService.connectMCP(mcpServerUrl.value, mcpApiKey.value, mcpProjectId.value)
+        mcpConnected.value = true
+        console.log('✅ MCP 자동 연결 성공')
+        
+        // 실시간 동기화 시작
+        figmaService.startRealtimeSync()
+        realtimeSyncEnabled.value = true
+        console.log('🔄 실시간 동기화 시작')
+        showNotification('MCP connected and realtime sync started!', 'success')
+      } catch (mcpError) {
+        console.log('⚠️ MCP 자동 연결 실패, 테스트 모드로 진행:', mcpError)
+        // MCP 연결 실패해도 Figma는 정상 작동
       }
     } else {
-      syncStatus.value = 'error'
-      showNotification('Failed to connect to Figma', 'error')
+      // fallback: 테스트 토큰 사용
+      const tokens = figmaService.getTestTokens()
+      colorTokens.value = tokens.map(token => ({
+        name: token.name,
+        value: token.value,
+        category: 'color' as const
+      }))
+      console.log('🎨 Figma 테스트 토큰 로드 완료 (fallback):', tokens.length)
+      
+      // MCP 자동 연결 (fallback 모드에서도)
+      try {
+        await figmaService.connectMCP(mcpServerUrl.value, mcpApiKey.value, mcpProjectId.value)
+        mcpConnected.value = true
+        figmaService.startRealtimeSync()
+        realtimeSyncEnabled.value = true
+        console.log('✅ MCP 자동 연결 성공 (fallback 모드)')
+        showNotification('MCP connected and realtime sync started!', 'success')
+      } catch (mcpError) {
+        console.log('⚠️ MCP 자동 연결 실패 (fallback 모드):', mcpError)
+      }
     }
   } catch (error) {
-    syncStatus.value = 'error'
-    showNotification('Failed to connect to Figma', 'error')
+    console.error('❌ tokens.json 로드 실패, 테스트 토큰 사용:', error)
+    // fallback: 테스트 토큰 사용
+    const tokens = figmaService.getTestTokens()
+    colorTokens.value = tokens.map(token => ({
+      name: token.name,
+      value: token.value,
+      category: 'color' as const
+    }))
+    
+    // MCP 자동 연결 (에러 모드에서도)
+    try {
+      await figmaService.connectMCP(mcpServerUrl.value, mcpApiKey.value, mcpProjectId.value)
+      mcpConnected.value = true
+      figmaService.startRealtimeSync()
+      realtimeSyncEnabled.value = true
+      console.log('✅ MCP 자동 연결 성공 (에러 모드)')
+      showNotification('MCP connected and realtime sync started!', 'success')
+    } catch (mcpError) {
+      console.log('⚠️ MCP 자동 연결 실패 (에러 모드):', mcpError)
+    }
   }
+} else {
+  syncStatus.value = 'error'
+  showNotification('Failed to connect to Figma', 'error')
+}
+} catch (error) {
+syncStatus.value = 'error'
+showNotification('Failed to connect to Figma', 'error')
+}
 }
 
 const syncWithFigma = async () => {

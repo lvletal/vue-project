@@ -37,7 +37,7 @@
       <div class="mb-8 space-y-4">
         <!-- Figma Connection -->
         <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between mb-4">
             <div class="flex items-center space-x-4">
               <div class="flex items-center space-x-2">
                 <div :class="figmaConnected ? 'bg-green-500' : 'bg-red-500'" class="w-3 h-3 rounded-full"></div>
@@ -56,6 +56,14 @@
             >
               {{ figmaConnected ? 'Disconnect' : 'Connect Figma' }}
             </button>
+          </div>
+          
+          <!-- Test File Info -->
+          <div class="bg-blue-900/30 border border-blue-500/30 rounded-lg p-3 mb-4">
+            <p class="text-blue-300 text-sm mb-2">🎨 테스트용 Figma 파일</p>
+            <p class="text-white text-xs">GuideTest - Primary Color Tokens</p>
+            <p class="text-gray-400 text-xs">File Key: ZPGmro2WzI9PakODFaybzs</p>
+            <p class="text-gray-400 text-xs">URL: https://www.figma.com/design/ZPGmro2WzI9PakODFaybzs/GuideTest</p>
           </div>
         </div>
 
@@ -472,29 +480,37 @@ const selectedTypographyToken = computed(() => typographyTokens.value[4]) // Bod
 // Methods
 const connectFigma = async () => {
   if (figmaConnected.value) {
-    figmaService.disconnect()
+    figmaService.stopRealtimeSync()
     figmaConnected.value = false
     figmaFileName.value = ''
     return
   }
 
   try {
-    // 실제 Figma 연결을 위해서는 access token과 file key가 필요합니다
-    // 여기서는 시뮬레이션을 위해 더미 데이터를 사용합니다
-    const accessToken = 'your-figma-access-token' // 실제 토큰으로 교체 필요
-    const fileKey = 'your-figma-file-key' // 실제 파일 키로 교체 필요
+    // 테스트 모드로 연결 (실제 토큰 없이도 작동)
+    syncStatus.value = 'syncing'
+    const success = await figmaService.connect('test-token', 'ZPGmro2WzI9PakODFaybzs')
     
-    // 실제 연결 시도 (토큰이 유효하지 않으면 에러 발생)
-    // const connection = await figmaService.connect(accessToken, fileKey)
-    // figmaConnected.value = true
-    // figmaFileName.value = connection.fileName
-    
-    // 시뮬레이션
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    figmaConnected.value = true
-    figmaFileName.value = 'Design System.fig'
-    showNotification('Successfully connected to Figma!', 'success')
+    if (success) {
+      figmaConnected.value = true
+      figmaFileName.value = 'GuideTest'
+      lastSyncTime.value = new Date().toLocaleString()
+      syncStatus.value = 'success'
+      showNotification('Successfully connected to Figma!', 'success')
+      
+      // 테스트 토큰 로드
+      const tokens = figmaService.getTestTokens()
+      colorTokens.value = tokens.map(token => ({
+        name: token.name,
+        value: token.value,
+        category: 'color' as const
+      }))
+    } else {
+      syncStatus.value = 'error'
+      showNotification('Failed to connect to Figma', 'error')
+    }
   } catch (error) {
+    syncStatus.value = 'error'
     showNotification('Failed to connect to Figma', 'error')
   }
 }

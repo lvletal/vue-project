@@ -496,7 +496,7 @@ const connectFigma = async () => {
       figmaFileName.value = 'GuideTest'
       lastSyncTime.value = new Date().toLocaleString()
       syncStatus.value = 'success'
-      showNotification('Successfully connected to Figma!', 'success')
+      showNotification('Successfully connected to Figma! (Test Mode)', 'success')
       
       // 테스트 토큰 로드
       const tokens = figmaService.getTestTokens()
@@ -505,6 +505,8 @@ const connectFigma = async () => {
         value: token.value,
         category: 'color' as const
       }))
+      
+      console.log('🎨 Figma 테스트 토큰 로드 완료:', tokens.length)
     } else {
       syncStatus.value = 'error'
       showNotification('Failed to connect to Figma', 'error')

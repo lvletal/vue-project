@@ -872,14 +872,29 @@ const reloadTokensFromFile = async () => {
         })
       }
       
-      // 변경사항이 있는지 확인
-      const hasChanges = JSON.stringify(colorTokens.value) !== JSON.stringify(primaryTokens)
+      // 변경사항이 있는지 확인 (더 정확한 비교)
+      const currentTokens = JSON.stringify(colorTokens.value)
+      const newTokens = JSON.stringify(primaryTokens)
+      const hasChanges = currentTokens !== newTokens
       
       if (hasChanges) {
+        console.log('🔄 변경사항 감지됨!')
+        console.log('이전 토큰들:', colorTokens.value.map(t => `${t.name}: ${t.value}`))
+        console.log('새로운 토큰들:', primaryTokens.map(t => `${t.name}: ${t.value}`))
+        
         colorTokens.value = primaryTokens
         console.log('✅ tokens.json에서 새로운 토큰 로드 완료:', primaryTokens.length)
-        console.log('📊 업데이트된 토큰들:', primaryTokens.filter(t => t.value === '#fff'))
-        showNotification('Tokens updated from Figma!', 'success')
+        
+        // #000 토큰들 찾기
+        const blackTokens = primaryTokens.filter(t => t.value === '#000')
+        if (blackTokens.length > 0) {
+          console.log('📊 #000으로 변경된 토큰들:', blackTokens.map(t => t.name))
+          showNotification(`Tokens updated! Found ${blackTokens.length} black tokens`, 'success')
+        } else {
+          showNotification('Tokens updated from Figma!', 'success')
+        }
+      } else {
+        console.log('📋 변경사항 없음')
       }
     }
   } catch (error) {
@@ -900,11 +915,11 @@ const startRealtimeSync = async () => {
   try {
     figmaService.startRealtimeSync()
     
-    // tokens.json 파일 감시 시작 (5초마다 체크)
+    // tokens.json 파일 감시 시작 (2초마다 체크)
     if (tokenFileWatcher) {
       clearInterval(tokenFileWatcher)
     }
-    tokenFileWatcher = setInterval(reloadTokensFromFile, 5000)
+    tokenFileWatcher = setInterval(reloadTokensFromFile, 2000)
     
     realtimeSyncEnabled.value = true
     showNotification('Realtime sync started!', 'success')

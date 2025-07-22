@@ -500,7 +500,13 @@ const connectFigma = async () => {
       
       // 실제 tokens.json 파일에서 토큰 로드
       try {
-        const response = await fetch('/tokens.json')
+        const response = await fetch('/tokens.json', { 
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        })
         if (response.ok) {
           const tokensData = await response.json()
           
@@ -828,6 +834,62 @@ const connectMCP = async () => {
   }
 }
 
+// 토큰 데이터를 주기적으로 다시 로드하는 함수
+const reloadTokensFromFile = async () => {
+  try {
+    console.log('🔄 tokens.json 파일에서 토큰 다시 로드 중...')
+    const response = await fetch('/tokens.json', { 
+      cache: 'no-store', // 캐시 사용하지 않음
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    })
+    
+    if (response.ok) {
+      const tokensData = await response.json()
+      
+      // Primary 색상 토큰들을 추출
+      const primaryTokens: DesignToken[] = []
+      if (tokensData.global && tokensData.global.primary) {
+        Object.entries(tokensData.global.primary).forEach(([key, token]: [string, any]) => {
+          primaryTokens.push({
+            name: `Primary ${key}`,
+            value: token.value,
+            category: 'color' as const
+          })
+        })
+      }
+      
+      // FigmaSet의 Primary 토큰들도 추가
+      if (tokensData.FigmaSet && tokensData.FigmaSet.Primary) {
+        Object.entries(tokensData.FigmaSet.Primary).forEach(([key, token]: [string, any]) => {
+          primaryTokens.push({
+            name: `Primary / ${key}`,
+            value: token.value,
+            category: 'color' as const
+          })
+        })
+      }
+      
+      // 변경사항이 있는지 확인
+      const hasChanges = JSON.stringify(colorTokens.value) !== JSON.stringify(primaryTokens)
+      
+      if (hasChanges) {
+        colorTokens.value = primaryTokens
+        console.log('✅ tokens.json에서 새로운 토큰 로드 완료:', primaryTokens.length)
+        console.log('📊 업데이트된 토큰들:', primaryTokens.filter(t => t.value === '#fff'))
+        showNotification('Tokens updated from Figma!', 'success')
+      }
+    }
+  } catch (error) {
+    console.error('❌ tokens.json 다시 로드 실패:', error)
+  }
+}
+
+// 토큰 파일 감시를 위한 interval
+let tokenFileWatcher: NodeJS.Timeout | null = null
+
 // 실시간 동기화 시작
 const startRealtimeSync = async () => {
   if (!figmaConnected.value || !mcpConnected.value) {
@@ -837,6 +899,12 @@ const startRealtimeSync = async () => {
 
   try {
     figmaService.startRealtimeSync()
+    
+    // tokens.json 파일 감시 시작 (5초마다 체크)
+    if (tokenFileWatcher) {
+      clearInterval(tokenFileWatcher)
+    }
+    tokenFileWatcher = setInterval(reloadTokensFromFile, 5000)
     
     realtimeSyncEnabled.value = true
     showNotification('Realtime sync started!', 'success')
@@ -848,6 +916,13 @@ const startRealtimeSync = async () => {
 // 실시간 동기화 중지
 const stopRealtimeSync = () => {
   figmaService.stopRealtimeSync()
+  
+  // tokens.json 파일 감시 중지
+  if (tokenFileWatcher) {
+    clearInterval(tokenFileWatcher)
+    tokenFileWatcher = null
+  }
+  
   realtimeSyncEnabled.value = false
   showNotification('Realtime sync stopped', 'info')
 }
@@ -872,6 +947,12 @@ onUnmounted(() => {
   // Cleanup realtime sync on component unmount
   if (realtimeSyncEnabled.value) {
     figmaService.stopRealtimeSync()
+  }
+  
+  // Cleanup token file watcher
+  if (tokenFileWatcher) {
+    clearInterval(tokenFileWatcher)
+    tokenFileWatcher = null
   }
 })
 </script> 

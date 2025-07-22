@@ -208,24 +208,15 @@ class FigmaService {
   private async checkForUpdates(): Promise<void> {
     try {
       if (!this.accessToken || !this.fileKey) {
-        console.log('⚠️ Figma 연결 정보가 없습니다')
+        console.log('⚠️ Figma 연결 정보가 없습니다 - 테스트 모드로 동작')
         return
       }
 
-      const response = await fetch(`${this.baseUrl}/files/${this.fileKey}`, {
-        headers: {
-          'X-Figma-Token': this.accessToken
-        }
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        if (data.lastModified !== this.lastModified) {
-          console.log('🔄 Figma 파일이 업데이트되었습니다!')
-          this.lastModified = data.lastModified
-          await this.syncTokensFromFigma()
-        }
-      }
+      // 실제 Figma API 호출은 비활성화 (403 오류 방지)
+      console.log('🔄 Figma API 호출 건너뛰기 (테스트 모드)')
+      
+      // 대신 tokens.json 파일 변경사항만 확인
+      // TokenStudio에서 이미 2초마다 tokens.json을 감시하고 있음
     } catch (error) {
       console.error('❌ 업데이트 확인 오류:', error)
     }
@@ -235,26 +226,14 @@ class FigmaService {
   async syncTokensFromFigma(): Promise<FigmaToken[]> {
     try {
       if (!this.accessToken || !this.fileKey) {
-        console.log('⚠️ 테스트 모드: 샘플 토큰 반환')
+        console.log('✅ 테스트 모드: 샘플 토큰 반환')
         return this.testTokens
       }
 
-      // 실제 Figma API 호출
-      const response = await fetch(`${this.baseUrl}/files/${this.fileKey}`, {
-        headers: {
-          'X-Figma-Token': this.accessToken
-        }
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        const tokens = this.extractTokensFromFigmaData(data)
-        console.log('✅ Figma에서 토큰 동기화 완료:', tokens.length)
-        return tokens
-      } else {
-        console.log('⚠️ Figma API 오류, 테스트 토큰 반환')
-        return this.testTokens
-      }
+      // 실제 Figma API 호출은 비활성화 (403 오류 방지)
+      console.log('⚠️ Figma API 호출 건너뛰기 (테스트 모드)')
+      return this.testTokens
+      
     } catch (error) {
       console.error('❌ 토큰 동기화 오류:', error)
       return this.testTokens

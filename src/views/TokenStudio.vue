@@ -907,13 +907,11 @@ let tokenFileWatcher: NodeJS.Timeout | null = null
 
 // 실시간 동기화 시작
 const startRealtimeSync = async () => {
-  if (!figmaConnected.value || !mcpConnected.value) {
-    showNotification('Please connect to both Figma and MCP first', 'error')
-    return
-  }
-
+  // 조건 제거: 항상 tokens.json 파일 감시 시작
   try {
-    figmaService.startRealtimeSync()
+    if (figmaConnected.value && mcpConnected.value) {
+      figmaService.startRealtimeSync()
+    }
     
     // tokens.json 파일 감시 시작 (2초마다 체크)
     if (tokenFileWatcher) {
@@ -923,6 +921,7 @@ const startRealtimeSync = async () => {
     
     realtimeSyncEnabled.value = true
     showNotification('Realtime sync started!', 'success')
+    console.log('🚀 tokens.json 파일 감시 시작 (2초마다)')
   } catch (error) {
     showNotification('Failed to start realtime sync', 'error')
   }
@@ -956,6 +955,14 @@ const disconnectMCP = () => {
 onMounted(() => {
   // Initialize with some default state
   lastSyncTime.value = ''
+  
+  // 페이지 로드 시 자동으로 tokens.json 파일 감시 시작
+  setTimeout(() => {
+    if (!tokenFileWatcher) {
+      tokenFileWatcher = setInterval(reloadTokensFromFile, 2000)
+      console.log('🚀 페이지 로드 시 자동으로 tokens.json 파일 감시 시작')
+    }
+  }, 1000)
 })
 
 onUnmounted(() => {

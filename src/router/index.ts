@@ -18,6 +18,21 @@ const router = createRouter({
       path: '/vip-club',
       name: 'vip-club',
       component: () => import('../views/VIPClubView.vue')
+    },
+    {
+      path: '/figma-import',
+      name: 'figma-import',
+      component: () => import('../views/FigmaImportView.vue')
+    },
+    {
+      path: '/figma-test',
+      name: 'figma-test',
+      component: () => import('../views/FigmaTestPage.vue')
+    },
+    {
+      path: '/mcp-status',
+      name: 'mcp-status',
+      component: () => import('../views/MCPStatusView.vue')
     }
   ]
 })

@@ -13,6 +13,11 @@ const router = createRouter({
       path: '/token-studio',
       name: 'token-studio',
       component: () => import('../views/TokenStudio.vue')
+    },
+    {
+      path: '/vip-club',
+      name: 'vip-club',
+      component: () => import('../views/VIPClubView.vue')
     }
   ]
 })

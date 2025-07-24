@@ -4,6 +4,31 @@
       Welcome to <span class="text-blue-600">Vue + Storybook + Tailwind</span>
     </h1>
 
+    <!-- Navigation Links -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+      <h2 class="text-2xl font-semibold mb-4 text-center">페이지 네비게이션</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <router-link 
+          to="/vip-club" 
+          class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-center font-medium transition-colors duration-200"
+        >
+          VIP Club
+        </router-link>
+        <router-link 
+          to="/promotion" 
+          class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg text-center font-medium transition-colors duration-200"
+        >
+          프로모션
+        </router-link>
+        <router-link 
+          to="/mcp-status" 
+          class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg text-center font-medium transition-colors duration-200"
+        >
+          MCP 연결 확인
+        </router-link>
+      </div>
+    </div>
+
     <!-- Accordion Components Section -->
     <div class="space-y-4">
       <!-- Button Accordion -->

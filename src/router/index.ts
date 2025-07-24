@@ -20,6 +20,11 @@ const router = createRouter({
       component: () => import('../views/VIPClubView.vue')
     },
     {
+      path: '/promotion',
+      name: 'promotion',
+      component: () => import('../views/PromotionView.vue')
+    },
+    {
       path: '/figma-import',
       name: 'figma-import',
       component: () => import('../views/FigmaImportView.vue')

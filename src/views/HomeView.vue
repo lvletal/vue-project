@@ -7,24 +7,48 @@
     <!-- Navigation Links -->
     <div class="bg-white rounded-lg shadow-md p-6 mb-8">
       <h2 class="text-2xl font-semibold mb-4 text-center">페이지 네비게이션</h2>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <router-link 
-          to="/vip-club" 
-          class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-center font-medium transition-colors duration-200"
-        >
-          VIP Club
-        </router-link>
-        <router-link 
-          to="/promotion" 
+          to="/token-studio" 
           class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg text-center font-medium transition-colors duration-200"
         >
-          프로모션
+          Token Studio
         </router-link>
         <router-link 
           to="/mcp-status" 
-          class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg text-center font-medium transition-colors duration-200"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg text-center font-medium transition-colors duration-200"
         >
-          MCP 연결 확인
+          MCP 연결
+        </router-link>
+        <router-link 
+          to="/figma-test" 
+          class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg text-center font-medium transition-colors duration-200"
+        >
+          Figma 테스트
+        </router-link>
+        <router-link 
+          to="/figma-import" 
+          class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg text-center font-medium transition-colors duration-200"
+        >
+          Figma 가져오기
+        </router-link>
+        <router-link 
+          to="/promotion" 
+          class="bg-pink-600 hover:bg-pink-700 text-white px-6 py-3 rounded-lg text-center font-medium transition-colors duration-200"
+        >
+          Promotion 페이지
+        </router-link>
+        <router-link 
+          to="/vip-club" 
+          class="bg-violet-600 hover:bg-violet-700 text-white px-6 py-3 rounded-lg text-center font-medium transition-colors duration-200"
+        >
+          VIP Club 페이지
+        </router-link>
+        <router-link 
+          to="/wallet" 
+          class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg text-center font-medium transition-colors duration-200"
+        >
+          Wallet 페이지
         </router-link>
       </div>
     </div>

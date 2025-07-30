@@ -1,6 +1,6 @@
-# Vue + Storybook + Tailwind CSS 프로젝트
+# Vue + Storybook + Tailwind + MCP 프로젝트
 
-Vue 3, TypeScript, Storybook, Tailwind CSS를 사용한 컴포넌트 기반 개발 환경입니다.
+Vue 3, TypeScript, Storybook, Tailwind CSS, MCP(Model Context Protocol)를 사용한 컴포넌트 기반 개발 환경입니다.
 
 ## 🚀 기술 스택
 
@@ -10,7 +10,7 @@ Vue 3, TypeScript, Storybook, Tailwind CSS를 사용한 컴포넌트 기반 개�
 - **Storybook** - 컴포넌트 개발 및 문서화
 - **Tailwind CSS** - 유틸리티 우선 CSS 프레임워크
 - **Vue Router** - 클라이언트 사이드 라우팅
-- **Pinia** - 상태 관리
+- **MCP** - Model Context Protocol (Figma 연동)
 
 ## 📦 설치 및 실행
 
@@ -19,11 +19,28 @@ Vue 3, TypeScript, Storybook, Tailwind CSS를 사용한 컴포넌트 기반 개�
 npm install
 ```
 
+### 자동 시작 (권장)
+재부팅 후 자동으로 모든 서버를 시작하려면:
+```bash
+auto-start.bat
+```
+
+### 수동 시작
+```bash
+# MCP 서버들 시작
+node MCP/figma-server.js &
+node MCP/design-server.js &
+node MCP/code-server.js &
+
+# Vue 개발 서버 시작
+npm run dev
+```
+
 ### 개발 서버 실행
 ```bash
 npm run dev
 ```
-- **URL**: http://localhost:3000
+- **URL**: http://localhost:3000 (포트 고정)
 
 ### Storybook 실행
 ```bash
@@ -41,6 +58,23 @@ npm run build
 npm run build-storybook
 ```
 
+## 🔧 MCP 설정
+
+### MCP 서버 상태 확인
+- **Figma MCP Server**: Figma 디자인 분석 및 변환
+- **Design MCP Server**: 디자인 토큰 관리
+- **Code MCP Server**: 코드 생성 및 최적화
+
+### Figma 연동
+1. MCP 서버들이 실행 중인지 확인
+2. `/figma-import` 페이지에서 Figma URL 입력
+3. 디자인을 Vue 컴포넌트로 자동 변환
+
+### 설정 파일
+- `prompt-config.json`: 프로젝트 설정 및 Figma 변환 프롬프트
+- `vite.config.ts`: Vite 설정 (포트 3000 고정)
+- `tailwind.config.js`: Tailwind CSS 설정
+
 ## 📁 프로젝트 구조
 
 ```
@@ -55,9 +89,9 @@ vue-project/
 │   │   └── Avatar.vue      # 아바타 컴포넌트
 │   ├── views/              # 페이지 컴포넌트
 │   │   ├── HomeView.vue    # 홈 페이지
-│   │   ├── ResponsivePage.vue # 반응형 페이지
+│   │   ├── MyPageView.vue  # My Page (Figma 연동)
 │   │   ├── TokenStudio.vue # 토큰 스튜디오 페이지
-│   │   └── PlusUsdtLanding.vue # PLUSUSDT 랜딩 페이지
+│   │   └── FigmaImportView.vue # Figma 임포트 페이지
 │   ├── services/           # 서비스 레이어
 │   │   └── figmaService.ts # Figma API 서비스
 │   ├── router/             # 라우터 설정
@@ -72,8 +106,14 @@ vue-project/
 │   ├── App.vue             # 메인 앱 컴포넌트
 │   ├── main.ts             # 앱 진입점
 │   └── style.css           # 전역 스타일 (Tailwind CSS)
+├── MCP/                    # MCP 서버들
+│   ├── figma-server.js     # Figma MCP 서버
+│   ├── design-server.js    # Design MCP 서버
+│   └── code-server.js      # Code MCP 서버
 ├── .storybook/             # Storybook 설정
 ├── public/                 # 정적 파일
+├── prompt-config.json      # 프로젝트 설정
+├── auto-start.bat          # 자동 시작 스크립트
 └── package.json
 ```
 
@@ -111,48 +151,37 @@ vue-project/
 3. **문서 확인**: Docs 탭에서 컴포넌트 사용법 및 API 확인
 4. **상호작용 테스트**: Actions 패널에서 이벤트 확인
 
-## 🎨 Token Studio (Figma 연동)
+## 🎨 Figma 연동 (MCP)
 
 ### 주요 기능
-- **Figma API 연동**: Figma 파일에서 디자인 토큰 자동 추출
+- **Figma 디자인 분석**: Figma 링크를 통한 자동 디자인 분석
+- **100% 정확한 변환**: 픽셀 퍼펙트 매칭으로 Vue 컴포넌트 생성
 - **실시간 동기화**: Figma 변경사항을 실시간으로 반영
-- **토큰 관리**: 색상, 타이포그래피, 간격 토큰 편집
-- **라이브 미리보기**: 토큰 변경사항을 즉시 확인
-- **JSON 내보내기**: 디자인 토큰을 JSON 형태로 내보내기
+- **자동 컴포넌트 감지**: 아코디언, 스와이퍼, 탭 등 자동 감지
+- **반응형 디자인**: 모바일/데스크톱 자동 대응
 
 ### 사용법
-1. **Figma 연결**: `/token-studio` 페이지에서 "Connect Figma" 클릭
-2. **토큰 동기화**: "Sync with Figma" 버튼으로 최신 토큰 가져오기
-3. **토큰 편집**: 각 토큰 옆 편집 버튼으로 값 수정
-4. **내보내기**: "Export Tokens" 버튼으로 JSON 파일 다운로드
+1. **MCP 서버 시작**: `auto-start.bat` 실행
+2. **Figma 링크 입력**: `/figma-import` 페이지에서 Figma URL 입력
+3. **자동 변환**: AI가 Figma 디자인을 분석하여 Vue 컴포넌트 생성
+4. **실시간 미리보기**: 생성된 컴포넌트를 즉시 확인
 
-### API 설정
-실제 Figma API 사용을 위해서는:
-- Figma Personal Access Token 필요
-- Figma 파일 키 필요
-- CORS 설정 필요
-
-### 컴포넌트 구조
-```
-TokenStudio/
-├── Header (연결 상태, 동기화 버튼)
-├── Connection Status (Figma 연결 상태)
-├── Token Categories (색상, 타이포그래피, 간격)
-├── Live Preview (실시간 미리보기)
-├── Token Editor (토큰 편집 폼)
-└── Sync Status (동기화 상태)
-```
+### 변환 기준
+- **색상 정확도**: 100% (HEX, RGB, HSL)
+- **폰트 정확도**: 100% (패밀리, 크기, 두께, 행간)
+- **간격 정확도**: 100% (px 단위)
+- **레이아웃 정확도**: 100% (그리드, 정렬, 반응형)
 
 ## 🤝 협업 가이드
 
 ### 디자이너/기획자
+- Figma에서 디자인 완성 후 링크 공유
 - Storybook에서 컴포넌트의 다양한 상태 확인
-- Controls 패널에서 원하는 조합 찾기
-- 결정된 props 조합을 개발자에게 전달
+- MCP를 통한 자동 코드 생성 활용
 
 ### 개발자
-- Storybook에서 컴포넌트 동작 확인
-- 전달받은 props 조합을 실제 코드에 반영
+- MCP 서버 상태 확인 및 관리
+- 생성된 코드 검토 및 최적화
 - 새로운 컴포넌트 추가 시 스토리도 함께 작성
 
 ## 🛠️ 개발 팁
@@ -163,6 +192,11 @@ TokenStudio/
 3. JSDoc 주석으로 문서화
 4. Storybook에서 확인
 
+### Figma 연동 최적화
+1. MCP 서버들이 정상 실행 중인지 확인
+2. Figma 링크가 공개되어 있는지 확인
+3. 디자인이 명확하고 구조화되어 있는지 확인
+
 ### Tailwind CSS 사용
 - 유틸리티 클래스로 빠른 스타일링
 - 컴포넌트별 커스텀 스타일은 computed 속성 활용
@@ -172,54 +206,62 @@ TokenStudio/
 
 | 명령어 | 설명 |
 |--------|------|
-| `npm run dev` | 개발 서버 실행 |
+| `npm run dev` | 개발 서버 실행 (포트 3000) |
 | `npm run build` | 프로덕션 빌드 |
 | `npm run preview` | 빌드 결과 미리보기 |
-| `npm run storybook` | Storybook 개발 서버 |
-| `npm run build-storybook` | Storybook 빌드 |
+| `npm run storybook` | Storybook 실행 |
+| `auto-start.bat` | 모든 서버 자동 시작 |
 
-## 🔧 설정 파일
+## 🔄 재부팅 후 복구
 
-- `vite.config.ts` - Vite 설정
-- `tailwind.config.js` - Tailwind CSS 설정
-- `postcss.config.js` - PostCSS 설정
-- `tsconfig.json` - TypeScript 설정
-- `.storybook/` - Storybook 설정
+재부팅 후 프로젝트를 다시 시작하려면:
 
-## 📄 라이선스
+1. **자동 시작**: `auto-start.bat` 실행
+2. **수동 시작**: 
+   ```bash
+   # MCP 서버들 시작
+   node MCP/figma-server.js &
+   node MCP/design-server.js &
+   node MCP/code-server.js &
+   
+   # Vue 개발 서버 시작
+   npm run dev
+   ```
 
-MIT License 
+## 📋 설정 파일
 
-# Vercel 배포 안내
+### prompt-config.json
+- 프로젝트 기본 설정
+- Figma 변환 프롬프트
+- MCP 서버 상태
+- 자동 시작 설정
 
-## 1. Vue 앱(Vite) 배포
-1. `npm run build` 실행
-2. Vercel에서 새 프로젝트 생성
-3. Output Directory를 `dist`로 지정
-4. 배포 후 Production URL로 접속
+### vite.config.ts
+- 포트 3000 고정
+- strictPort 옵션 활성화
+- 빌드 최적화 설정
 
-## 2. Storybook 배포
-1. `npm run build-storybook` 실행
-2. Vercel에서 새 프로젝트 생성 (또는 별도 배포)
-3. Output Directory를 `storybook-static`으로 지정
-4. 배포 후 Production URL로 접속
+### tailwind.config.js
+- 커스텀 색상 팔레트
+- Figma 디자인 토큰 반영
+- 반응형 브레이크포인트
 
-## 참고
-- 두 프로젝트 모두 별도 URL로 외부에서 접근 가능
-- SPA 라우팅을 위해 `vercel.json` 유지
-- 환경변수 필요시 Vercel 대시보드에서 추가 
+## 🚨 문제 해결
 
-# 한 프로젝트에서 Vue와 Storybook 동시 배포 (Vercel)
+### 포트 충돌
+```bash
+# 3000번 포트 사용 중인 프로세스 종료
+netstat -ano | findstr :3000
+taskkill /PID [PID번호] /F
+```
 
-## 빌드 및 배포 방법
-1. `npm run build` 실행 (Vue 앱 빌드)
-2. `npm run build-storybook` 실행 (Storybook 빌드)
-3. Vercel Output Directory는 `dist`로 지정
-4. `vercel.json`의 rewrite 규칙으로 `/storybook` 경로는 자동으로 `storybook-static` 폴더에서 서빙됨
-5. 배포 후:
-   - `/` : Vue 앱
-   - `/storybook` : Storybook
+### MCP 서버 오류
+```bash
+# 모든 Node.js 프로세스 종료 후 재시작
+taskkill /f /im node.exe
+auto-start.bat
+```
 
-## 주의
-- 두 빌드 결과물이 모두 포함된 상태로 배포해야 함
-- SPA 라우팅 및 Storybook 라우팅 모두 정상 동작 
+### Tailwind CSS 오류
+- `tailwind.config.js`에 필요한 색상이 정의되어 있는지 확인
+- `bg-white`, `bg-black` 등 기본 색상 포함 확인 

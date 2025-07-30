@@ -25,6 +25,16 @@ const router = createRouter({
       component: () => import('../views/PromotionView.vue')
     },
     {
+      path: '/wallet',
+      name: 'wallet',
+      component: () => import('../views/WalletView.vue')
+    },
+    {
+      path: '/my-page',
+      name: 'my-page',
+      component: () => import('../views/MyPageView.vue')
+    },
+    {
       path: '/figma-import',
       name: 'figma-import',
       component: () => import('../views/FigmaImportView.vue')
@@ -37,7 +47,12 @@ const router = createRouter({
     {
       path: '/mcp-status',
       name: 'mcp-status',
-      component: () => import('../views/MCPStatusView.vue')
+      component: () => import('../views/MCPConnection.vue')
+    },
+    {
+      path: '/guide',
+      name: 'guide',
+      component: () => import('../views/EnvironmentGuide.vue')
     }
   ]
 })

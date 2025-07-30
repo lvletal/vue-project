@@ -1,131 +1,161 @@
 <template>
-  <div class="min-h-screen bg-gray-900 text-white p-4 sm:p-8">
-    <div class="max-w-6xl mx-auto">
+  <div class="bg-white relative min-h-screen">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
       <!-- Header -->
-      <div class="mb-8">
-        <h1 class="text-3xl font-bold mb-4">프로모션</h1>
-        <p class="text-gray-400">다양한 프로모션 혜택을 확인하세요</p>
+      <div class="mb-20">
+        <h1 class="text-2xl font-semibold text-[#222222] leading-[1.2] capitalize">
+          promotion
+        </h1>
       </div>
 
-      <!-- Promotion Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <!-- Welcome Bonus -->
-        <div class="bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-xl font-semibold">신규 가입 보너스</h3>
-            <div class="bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-sm font-bold">
-              HOT
+      <!-- Promotion Cards Grid - 2개씩 배치 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+        <!-- First Promotion Card -->
+        <div class="flex flex-col gap-4">
+          <div 
+            class="h-80 rounded-[10px] bg-cover bg-center bg-no-repeat w-full"
+            style="background-image: url('https://picsum.photos/800/600?random=1')"
+          ></div>
+          <div class="flex flex-col gap-[22px] w-full">
+            <div class="flex flex-row gap-6 items-center w-full">
+              <div class="flex-1 flex flex-col gap-2">
+                <div class="text-[#666666] text-base font-light leading-[1.2]">
+                  only when first!
+                </div>
+                <div class="text-[#222222] text-xl font-medium leading-[1.2]">
+                  50% first deposit additional bonus
+                </div>
+              </div>
+              <div class="text-[#ff4c4c] text-sm font-normal leading-[1.4]">
+                {{ countdown1 }}
+              </div>
+            </div>
+            <div class="flex flex-row gap-4 items-center w-full">
+              <div class="flex flex-row gap-1.5 items-center">
+                <div class="bg-[#eff3ff] px-1.5 py-0.5 rounded">
+                  <div class="text-[#005cf3] text-sm font-normal leading-[1.4] text-right">
+                    ~5%
+                  </div>
+                </div>
+                <div class="bg-[#f2f5fa] px-1.5 py-0.5 rounded">
+                  <div class="text-[#666666] text-sm font-normal leading-[1.4] text-right">
+                    zero rolling
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          <p class="text-blue-100 mb-4">첫 입금 시 100% 보너스 제공</p>
-          <div class="bg-white bg-opacity-20 rounded-lg p-4 mb-4">
-            <div class="text-2xl font-bold text-yellow-400">USDT 1,000</div>
-            <div class="text-sm text-blue-200">최대 보너스</div>
-          </div>
-          <button class="w-full bg-yellow-400 text-yellow-900 py-2 rounded-lg font-semibold hover:bg-yellow-300 transition-colors">
-            신청하기
-          </button>
         </div>
 
-        <!-- Daily Bonus -->
-        <div class="bg-gradient-to-br from-green-600 to-green-800 rounded-xl p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-xl font-semibold">데일리 보너스</h3>
-            <div class="bg-green-400 text-green-900 px-3 py-1 rounded-full text-sm font-bold">
-              DAILY
+        <!-- Second Promotion Card -->
+        <div class="flex flex-col gap-4">
+          <div 
+            class="h-80 rounded-[10px] bg-cover bg-center bg-no-repeat w-full"
+            style="background-image: url('https://picsum.photos/800/600?random=2')"
+          ></div>
+          <div class="flex flex-col gap-[22px] w-full">
+            <div class="flex flex-row gap-6 items-center w-full">
+              <div class="flex-1 flex flex-col gap-2">
+                <div class="text-[#666666] text-base font-light leading-[1.2]">
+                  just One chance
+                </div>
+                <div class="text-[#222222] text-xl font-medium leading-[1.2]">
+                  Get 100% extra on your first deposit!
+                </div>
+              </div>
+              <div class="text-[#999999] text-sm font-normal leading-[1.4]">
+                aways
+              </div>
+            </div>
+            <div class="flex flex-row gap-4 items-center w-full">
+              <div class="flex flex-row gap-1.5 items-center">
+                <div class="bg-[#eff3ff] px-1.5 py-0.5 rounded">
+                  <div class="text-[#005cf3] text-sm font-normal leading-[1.4] text-right">
+                    100%
+                  </div>
+                </div>
+                <div class="bg-[#f2f5fa] px-1.5 py-0.5 rounded">
+                  <div class="text-[#666666] text-sm font-normal leading-[1.4] text-right">
+                    x30
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          <p class="text-green-100 mb-4">매일 로그인 시 보너스 지급</p>
-          <div class="bg-white bg-opacity-20 rounded-lg p-4 mb-4">
-            <div class="text-2xl font-bold text-green-400">USDT 50</div>
-            <div class="text-sm text-green-200">일일 보너스</div>
-          </div>
-          <button class="w-full bg-green-400 text-green-900 py-2 rounded-lg font-semibold hover:bg-green-300 transition-colors">
-            받기
-          </button>
         </div>
 
-        <!-- VIP Bonus -->
-        <div class="bg-gradient-to-br from-purple-600 to-purple-800 rounded-xl p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-xl font-semibold">VIP 전용 보너스</h3>
-            <div class="bg-purple-400 text-purple-900 px-3 py-1 rounded-full text-sm font-bold">
-              VIP
+        <!-- Third Promotion Card -->
+        <div class="flex flex-col gap-4">
+          <div 
+            class="h-80 rounded-[10px] bg-cover bg-center bg-no-repeat w-full"
+            style="background-image: url('https://picsum.photos/800/600?random=3')"
+          ></div>
+          <div class="flex flex-col gap-[22px] w-full">
+            <div class="flex flex-row gap-6 items-center w-full">
+              <div class="flex-1 flex flex-col gap-2">
+                <div class="text-[#666666] text-base font-light leading-[1.2]">
+                  Don't worry your lost
+                </div>
+                <div class="text-[#222222] text-xl font-medium leading-[1.2]">
+                  Get 5% of your loss back
+                </div>
+              </div>
+              <div class="text-[#999999] text-sm font-normal leading-[1.4]">
+                {{ countdown2 }}
+              </div>
+            </div>
+            <div class="flex flex-row gap-4 items-center w-full">
+              <div class="flex flex-row gap-1.5 items-center">
+                <div class="bg-[#eff3ff] px-1.5 py-0.5 rounded">
+                  <div class="text-[#005cf3] text-sm font-normal leading-[1.4] text-right">
+                    ~5%
+                  </div>
+                </div>
+                <div class="bg-[#f2f5fa] px-1.5 py-0.5 rounded">
+                  <div class="text-[#666666] text-sm font-normal leading-[1.4] text-right">
+                    zero rolling
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          <p class="text-purple-100 mb-4">VIP 회원 전용 특별 혜택</p>
-          <div class="bg-white bg-opacity-20 rounded-lg p-4 mb-4">
-            <div class="text-2xl font-bold text-purple-400">USDT 5,000</div>
-            <div class="text-sm text-purple-200">월 보너스</div>
-          </div>
-          <button class="w-full bg-purple-400 text-purple-900 py-2 rounded-lg font-semibold hover:bg-purple-300 transition-colors">
-            자세히 보기
-          </button>
         </div>
 
-        <!-- Referral Bonus -->
-        <div class="bg-gradient-to-br from-orange-600 to-orange-800 rounded-xl p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-xl font-semibold">추천인 보너스</h3>
-            <div class="bg-orange-400 text-orange-900 px-3 py-1 rounded-full text-sm font-bold">
-              REFER
+        <!-- Fourth Promotion Card -->
+        <div class="flex flex-col gap-4">
+          <div 
+            class="h-80 rounded-[10px] bg-cover bg-center bg-no-repeat w-full"
+            style="background-image: url('https://picsum.photos/800/600?random=4')"
+          ></div>
+          <div class="flex flex-col gap-[22px] w-full">
+            <div class="flex flex-row gap-6 items-center w-full">
+              <div class="flex-1 flex flex-col gap-2">
+                <div class="text-[#666666] text-base font-light leading-[1.2]">
+                  only when first!
+                </div>
+                <div class="text-[#222222] text-xl font-medium leading-[1.2]">
+                  50% first deposit additional bonus
+                </div>
+              </div>
+              <div class="text-[#ff4c4c] text-sm font-normal leading-[1.4]">
+                {{ countdown3 }}
+              </div>
+            </div>
+            <div class="flex flex-row gap-4 items-center w-full">
+              <div class="flex flex-row gap-1.5 items-center">
+                <div class="bg-[#eff3ff] px-1.5 py-0.5 rounded">
+                  <div class="text-[#005cf3] text-sm font-normal leading-[1.4] text-right">
+                    ~5%
+                  </div>
+                </div>
+                <div class="bg-[#f2f5fa] px-1.5 py-0.5 rounded">
+                  <div class="text-[#666666] text-sm font-normal leading-[1.4] text-right">
+                    zero rolling
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          <p class="text-orange-100 mb-4">친구 초대 시 양쪽 보너스</p>
-          <div class="bg-white bg-opacity-20 rounded-lg p-4 mb-4">
-            <div class="text-2xl font-bold text-orange-400">USDT 200</div>
-            <div class="text-sm text-orange-200">추천 보너스</div>
-          </div>
-          <button class="w-full bg-orange-400 text-orange-900 py-2 rounded-lg font-semibold hover:bg-orange-300 transition-colors">
-            추천 코드 생성
-          </button>
-        </div>
-
-        <!-- Cashback -->
-        <div class="bg-gradient-to-br from-red-600 to-red-800 rounded-xl p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-xl font-semibold">캐시백</h3>
-            <div class="bg-red-400 text-red-900 px-3 py-1 rounded-full text-sm font-bold">
-              CASHBACK
-            </div>
-          </div>
-          <p class="text-red-100 mb-4">손실 시 일정 비율 환급</p>
-          <div class="bg-white bg-opacity-20 rounded-lg p-4 mb-4">
-            <div class="text-2xl font-bold text-red-400">최대 20%</div>
-            <div class="text-sm text-red-200">캐시백 비율</div>
-          </div>
-          <button class="w-full bg-red-400 text-red-900 py-2 rounded-lg font-semibold hover:bg-red-300 transition-colors">
-            신청하기
-          </button>
-        </div>
-
-        <!-- Tournament -->
-        <div class="bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-xl p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-xl font-semibold">토너먼트</h3>
-            <div class="bg-indigo-400 text-indigo-900 px-3 py-1 rounded-full text-sm font-bold">
-              TOURNAMENT
-            </div>
-          </div>
-          <p class="text-indigo-100 mb-4">주간 토너먼트 참여</p>
-          <div class="bg-white bg-opacity-20 rounded-lg p-4 mb-4">
-            <div class="text-2xl font-bold text-indigo-400">USDT 10,000</div>
-            <div class="text-sm text-indigo-200">총 상금</div>
-          </div>
-          <button class="w-full bg-indigo-400 text-indigo-900 py-2 rounded-lg font-semibold hover:bg-indigo-300 transition-colors">
-            참여하기
-          </button>
-        </div>
-      </div>
-
-      <!-- Terms and Conditions -->
-      <div class="mt-12 bg-gray-800 rounded-lg p-6">
-        <h3 class="text-xl font-semibold mb-4">프로모션 이용약관</h3>
-        <div class="text-sm text-gray-300 space-y-2">
-          <p>• 모든 프로모션은 중복 신청이 불가능합니다.</p>
-          <p>• 보너스는 출금 전 베팅 요건을 충족해야 합니다.</p>
-          <p>• 프로모션 혜택은 사전 공지 없이 변경될 수 있습니다.</p>
-          <p>• 부정한 방법으로 보너스를 받은 경우 계정이 정지될 수 있습니다.</p>
         </div>
       </div>
     </div>
@@ -133,9 +163,123 @@
 </template>
 
 <script setup lang="ts">
-// 프로모션 페이지 로직
+import { ref, onMounted, onUnmounted } from 'vue'
+
+// 카운트다운 상태
+const countdown1 = ref('12:29:30 Left')
+const countdown2 = ref('7Day Left')
+const countdown3 = ref('12:29:30 Left')
+
+// 카운트다운 타이머들
+let timer1: NodeJS.Timeout | null = null
+let timer2: NodeJS.Timeout | null = null
+let timer3: NodeJS.Timeout | null = null
+
+// 카운트다운 함수들
+const startCountdown1 = () => {
+  let hours = 12
+  let minutes = 29
+  let seconds = 30
+
+  timer1 = setInterval(() => {
+    if (seconds > 0) {
+      seconds--
+    } else if (minutes > 0) {
+      minutes--
+      seconds = 59
+    } else if (hours > 0) {
+      hours--
+      minutes = 59
+      seconds = 59
+    } else {
+      countdown1.value = 'Expired'
+      if (timer1) clearInterval(timer1)
+      return
+    }
+
+    countdown1.value = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')} Left`
+  }, 1000)
+}
+
+const startCountdown2 = () => {
+  let days = 7
+
+  timer2 = setInterval(() => {
+    if (days > 0) {
+      days--
+      countdown2.value = `${days}Day Left`
+    } else {
+      countdown2.value = 'Expired'
+      if (timer2) clearInterval(timer2)
+    }
+  }, 86400000) // 24시간마다 업데이트
+}
+
+const startCountdown3 = () => {
+  let hours = 12
+  let minutes = 29
+  let seconds = 30
+
+  timer3 = setInterval(() => {
+    if (seconds > 0) {
+      seconds--
+    } else if (minutes > 0) {
+      minutes--
+      seconds = 59
+    } else if (hours > 0) {
+      hours--
+      minutes = 59
+      seconds = 59
+    } else {
+      countdown3.value = 'Expired'
+      if (timer3) clearInterval(timer3)
+      return
+    }
+
+    countdown3.value = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')} Left`
+  }, 1000)
+}
+
+onMounted(() => {
+  startCountdown1()
+  startCountdown2()
+  startCountdown3()
+})
+
+onUnmounted(() => {
+  if (timer1) clearInterval(timer1)
+  if (timer2) clearInterval(timer2)
+  if (timer3) clearInterval(timer3)
+})
 </script>
 
 <style scoped>
 /* 프로모션 페이지 스타일 */
+.promotion-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
+}
+
+.promotion-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+}
+
+.promotion-card-content {
+  position: relative;
+  z-index: 1;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
 </style> 

@@ -1,0 +1,108 @@
+{
+  "project": {
+    "name": "Vue + Storybook + Tailwind + MCP",
+    "description": "Vue.js project with Storybook, Tailwind CSS, and MCP integration",
+    "version": "1.0.0",
+    "type": "vue-typescript"
+  },
+  "features": {
+    "vue": {
+      "version": "3.5.17",
+      "composition": true,
+      "typescript": true,
+      "router": true
+    },
+    "storybook": {
+      "version": "9.0.17",
+      "addons": [
+        "@storybook/addon-a11y",
+        "@storybook/addon-docs",
+        "@storybook/addon-vitest"
+      ]
+    },
+    "tailwind": {
+      "version": "3.4.0",
+      "postcss": true,
+      "autoprefixer": true
+    },
+    "mcp": {
+      "enabled": true,
+      "servers": [
+        "figma-server",
+        "design-server",
+        "code-server"
+      ],
+      "status": "running"
+    },
+    "figma_integration": {
+      "enabled": true,
+      "mcp_server": "running",
+      "default_prompt": "당신은 Figma 디자인을 Vue.js 컴포넌트로 100% 정확하게 변환하는 전문가입니다. 다음 지침을 엄격히 따라주세요:\n\n### 1. 디자인 분석 단계\n먼저 제공된 Figma 링크를 분석하여 다음을 정확히 파악하세요:\n\n**레이아웃 구조:**\n- 전체 페이지 구조 (헤더, 메인, 사이드바, 푸터)\n- 그리드 시스템 (컬럼 수, 간격, 정렬)\n- 반응형 브레이크포인트\n- 컴포넌트 계층 구조\n\n**시각적 요소:**\n- 정확한 색상 코드 (HEX, RGB, HSL)\n- 폰트 패밀리, 크기, 두께, 행간\n- 간격과 패딩 (px 단위)\n- 테두리 반경, 그림자 효과\n- 그라데이션 (방향, 색상, 위치)\n\n**인터랙티브 요소:**\n- 버튼, 링크, 입력 필드\n- 호버/포커스 상태\n- 애니메이션/트랜지션\n- 아코디언, 스와이퍼, 탭 등 UI 컴포넌트\n\n### 2. 컴포넌트 식별\n디자인에서 다음을 자동 감지하세요:\n- 아코디언 (접기/펼치기)\n- 스와이퍼/캐러셀\n- 탭 인터페이스\n- 모달/팝업\n- 드롭다운 메뉴\n- 프로그레스 바\n- 토글 스위치\n- 체크박스/라디오 버튼\n\n### 3. 정확한 CSS 구현\n```css\n/* 모든 픽셀 값은 정확히 매칭 */\n.element {\n  padding: 16px 24px; /* 정확한 px 값 */\n  margin: 8px 0 12px 0; /* 정확한 간격 */\n  font-size: 14px; /* 정확한 폰트 크기 */\n  line-height: 1.5; /* 정확한 행간 */\n  border-radius: 8px; /* 정확한 반경 */\n  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* 정확한 그림자 */\n}\n```\n\n### 4. Tailwind CSS 클래스 매핑\nFigma 값 → Tailwind 클래스 정확 매핑:\n- 색상: `bg-[#FF6B6B]` (정확한 HEX)\n- 간격: `p-[16px]` (정확한 px)\n- 폰트: `text-[14px]` (정확한 크기)\n- 그라데이션: `bg-gradient-to-r from-blue-500 to-purple-600`\n\n### 5. 반응형 디자인\n- 모바일 퍼스트 접근법\n- 브레이크포인트별 레이아웃 변경\n- 터치 친화적 인터페이스\n\n### 6. 접근성 고려\n- ARIA 속성 포함\n- 키보드 네비게이션\n- 색상 대비 검증\n- 스크린 리더 지원\n\n### 7. 성능 최적화\n- 컴포넌트 분리\n- 지연 로딩\n- 이미지 최적화\n- CSS 최적화\n\n### 8. 출력 형식\n다음 순서로 정확한 코드를 생성하세요:\n\n1. **디자인 분석 결과** (구조, 색상, 폰트, 간격)\n2. **컴포넌트 구조** (감지된 UI 요소들)\n3. **Vue.js 컴포넌트 코드** (100% 정확한 스타일링)\n4. **Tailwind 설정** (필요한 커스텀 값들)\n5. **반응형 가이드** (브레이크포인트별 변경사항)\n\n### 9. 품질 검증\n생성된 코드가 다음을 만족하는지 확인:\n- 픽셀 퍼펙트 매칭\n- 색상 정확도 100%\n- 폰트 크기/간격 정확도 100%\n- 인터랙션 상태 완벽 구현\n- 반응형 동작 정확\n\n### 10. 추가 요구사항\n- 모든 픽셀 값은 정확히 매칭\n- 색상 코드는 Figma에서 추출\n- 폰트는 시스템 폰트 또는 웹폰트 명시\n- 애니메이션은 CSS 트랜지션 사용\n- 접근성 표준 준수\n\n이제 제공된 Figma 링크를 분석하여 100% 정확한 Vue.js 컴포넌트를 생성해주세요.",
+      "auto_detect_components": true,
+      "pixel_perfect_matching": true,
+      "color_accuracy": "100%",
+      "font_accuracy": "100%",
+      "spacing_accuracy": "100%"
+    }
+  },
+  "pages": {
+    "home": "/",
+    "token-studio": "/token-studio",
+    "vip-club": "/vip-club",
+    "promotion": "/promotion",
+    "wallet": "/wallet",
+    "my-page": "/my-page",
+    "figma-import": "/figma-import",
+    "figma-test": "/figma-test",
+    "mcp-status": "/mcp-status",
+    "guide": "/guide"
+  },
+  "components": {
+    "ui": [
+      "Button",
+      "Card",
+      "Accordion",
+      "Tab",
+      "Swiper",
+      "Chat",
+      "ColorPalette"
+    ],
+    "sections": [
+      "PromotionSection",
+      "GamingProvidersSection",
+      "DesktopFooter",
+      "MobileFooter"
+    ]
+  },
+  "development": {
+    "scripts": {
+      "dev": "vite",
+      "build": "vite build",
+      "preview": "vite preview",
+      "storybook": "storybook dev -p 6006",
+      "build-storybook": "storybook build",
+      "test:unit": "vitest",
+      "test:e2e": "cypress run"
+    },
+    "ports": {
+      "vue": 3000,
+      "storybook": 6006
+    },
+    "mcp_servers": {
+      "figma": "running",
+      "design": "running",
+      "code": "running"
+    }
+  },
+  "deployment": {
+    "platform": "vercel",
+    "config": "vercel.json",
+    "ignore": ".vercelignore"
+  },
+  "settings": {
+    "preserve_config": true,
+    "auto_start_servers": true,
+    "default_prompt_enabled": true,
+    "mcp_connection_required": true
+  }
+} 

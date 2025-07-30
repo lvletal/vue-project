@@ -1,6 +1,5 @@
-import type { Config } from 'tailwindcss'
-
-const config: Config = {
+/** @type {import('tailwindcss').Config} */
+module.exports = {
   content: [
     "./index.html",
     "./src/**/*.{vue,js,ts,jsx,tsx}",
@@ -11,6 +10,7 @@ const config: Config = {
     extend: {
       colors: {
         white: '#ffffff',
+        black: '#000000',
         gray: {
           50: '#f9fafb',
           100: '#f3f4f6',
@@ -87,6 +87,4 @@ const config: Config = {
     },
   },
   plugins: [],
-}
-
-export default config 
+} 

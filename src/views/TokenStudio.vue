@@ -1,295 +1,557 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900">
-    <!-- Header -->
-    <header class="backdrop-blur-md bg-white/10 border-b border-white/20 sticky top-0 z-50">
-      <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
-        <div class="flex items-center space-x-4">
-          <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z"/>
-            </svg>
-          </div>
-          <h1 class="text-xl font-bold text-white">Token Studio</h1>
+  <div class="min-h-screen bg-gray-900 text-white p-4 lg:p-6">
+    <div class="max-w-8xl mx-auto">
+      <!-- Header -->
+      <div class="mb-8">
+        <h1 class="text-4xl font-bold mb-2">Token Studio</h1>
+        <p class="text-gray-400">Design tokens from Figma and local tokens.json</p>
+        <div class="mt-2 text-sm text-gray-500">
+          Last updated: {{ lastUpdateTime }}
         </div>
-        <div class="flex items-center space-x-4">
-          <button 
-            @click="syncWithFigma" 
-            :disabled="!figmaConnected"
-            class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-medium transition"
-          >
-            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-            </svg>
-            Sync with Figma
-          </button>
-          <button 
-            @click="exportTokens" 
-            class="border border-white/30 hover:border-white/50 text-white px-4 py-2 rounded-lg text-sm font-medium transition hover:bg-white/10"
-          >
-            Export Tokens
-          </button>
-        </div>
-      </nav>
-    </header>
+      </div>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <!-- Connection Status -->
-      <div class="mb-8 space-y-4">
-        <!-- Figma Connection -->
-        <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center space-x-4">
-              <div class="flex items-center space-x-2">
-                <div :class="figmaConnected ? 'bg-green-500' : 'bg-red-500'" class="w-3 h-3 rounded-full"></div>
-                <span class="text-white font-medium">
-                  {{ figmaConnected ? 'Connected to Figma' : 'Not connected to Figma' }}
-                </span>
-              </div>
-              <div v-if="figmaConnected" class="text-blue-300 text-sm">
-                File: {{ figmaFileName }}
-              </div>
-            </div>
-            <button 
-              @click="connectFigma" 
-              :class="figmaConnected ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'"
-              class="text-white px-4 py-2 rounded-lg text-sm font-medium transition"
-            >
-              {{ figmaConnected ? 'Disconnect' : 'Connect Figma' }}
-            </button>
-          </div>
-          
-          <!-- Test File Info -->
-          <div class="bg-blue-900/30 border border-blue-500/30 rounded-lg p-3 mb-4">
-            <p class="text-blue-300 text-sm mb-2">🎨 테스트용 Figma 파일</p>
-            <p class="text-white text-xs">GuideTest - Primary Color Tokens</p>
-            <p class="text-gray-400 text-xs">File Key: ZPGmro2WzI9PakODFaybzs</p>
-            <p class="text-gray-400 text-xs">URL: https://www.figma.com/design/ZPGmro2WzI9PakODFaybzs/GuideTest</p>
-          </div>
+      <!-- Debug Info -->
+      <div class="mb-4 p-4 bg-gray-800 rounded-lg">
+        <h3 class="text-lg font-semibold mb-2">Debug Info</h3>
+        <div class="text-sm space-y-1">
+          <div>Total tokens loaded: {{ totalTokens }}</div>
+          <div>Color tokens: {{ colorTokenCount }}</div>
+          <div>Typography tokens: {{ typographyTokenCount }}</div>
+          <div>Spacing tokens: {{ spacingTokenCount }}</div>
+          <div>Font Family tokens: {{ fontFamilyTokenCount }}</div>
+          <div>Font Weight tokens: {{ fontWeightTokenCount }}</div>
         </div>
-
-        <!-- MCP Connection -->
-        <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center space-x-2">
-              <div :class="mcpConnected ? 'bg-green-500' : 'bg-red-500'" class="w-3 h-3 rounded-full"></div>
-              <span class="text-white font-medium">
-                {{ mcpStatusText }}
-              </span>
-            </div>
-            <div class="flex space-x-2">
-              <button 
-                v-if="!mcpConnected"
-                @click="connectMCP" 
-                class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
-              >
-                Connect MCP
-              </button>
-              <button 
-                v-if="mcpConnected && !realtimeSyncEnabled"
-                @click="startRealtimeSync" 
-                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
-              >
-                Start Realtime Sync
-              </button>
-              <button 
-                v-if="realtimeSyncEnabled"
-                @click="stopRealtimeSync" 
-                class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
-              >
-                Stop Sync
-              </button>
-              <button 
-                v-if="mcpConnected"
-                @click="disconnectMCP" 
-                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
-              >
-                Disconnect
-              </button>
-            </div>
-          </div>
-          
-          <!-- MCP Connection Form -->
-          <div v-if="!mcpConnected" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label class="block text-white text-sm font-medium mb-2">MCP Server URL</label>
-              <input 
-                v-model="mcpServerUrl"
-                type="url" 
-                placeholder="https://your-mcp-server.com"
-                class="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-            <div>
-              <label class="block text-white text-sm font-medium mb-2">API Key</label>
-              <input 
-                v-model="mcpApiKey"
-                type="password" 
-                placeholder="Your MCP API key"
-                class="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-            <div>
-              <label class="block text-white text-sm font-medium mb-2">Project ID</label>
-              <input 
-                v-model="mcpProjectId"
-                type="text" 
-                placeholder="your-project-id"
-                class="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
+        
+        <!-- Typography Debug -->
+        <div class="mt-4 p-3 bg-gray-700 rounded">
+          <h4 class="text-sm font-medium mb-2">Typography Tokens Found:</h4>
+          <div class="text-xs space-y-1">
+            <div v-for="(set, setName) in typographyTokens" :key="setName">
+              <div class="font-medium text-gray-300">{{ setName }}:</div>
+              <div class="ml-4 text-gray-400">
+                <div v-for="(token, tokenName) in set" :key="tokenName">
+                  {{ tokenName }}: {{ token.value.fontFamily }} {{ token.value.fontSize }}
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="grid lg:grid-cols-3 gap-8">
-        <!-- Token Categories -->
-        <div class="lg:col-span-1 space-y-6">
-          <!-- Colors -->
-          <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
-            <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
-              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z"/>
-              </svg>
-              Colors
-            </h3>
-            <div class="space-y-3">
-              <div v-for="color in colorTokens" :key="color.name" class="flex items-center space-x-3">
-                <div :style="{ backgroundColor: color.value }" class="w-8 h-8 rounded-lg border border-white/20"></div>
-                <div class="flex-1">
-                  <div class="text-white text-sm font-medium">{{ color.name }}</div>
-                  <div class="text-blue-300 text-xs">{{ color.value }}</div>
-                </div>
-                <button @click="editToken(color)" class="text-blue-400 hover:text-blue-300">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
+      <!-- Connection Status -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div class="bg-gray-800 p-4 rounded-lg">
+          <h3 class="text-lg font-semibold mb-2">Figma Connection</h3>
+          <div class="flex items-center space-x-2">
+            <div :class="figmaConnected ? 'bg-green-500' : 'bg-red-500'" class="w-3 h-3 rounded-full"></div>
+            <span>{{ figmaConnected ? 'Connected' : 'Disconnected' }}</span>
           </div>
-
-          <!-- Typography -->
-          <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
-            <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
-              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-              </svg>
-              Typography
-            </h3>
-            <div class="space-y-3">
-              <div v-for="font in typographyTokens" :key="font.name" class="flex items-center justify-between">
-                <div>
-                  <div class="text-white text-sm font-medium">{{ font.name }}</div>
-                  <div class="text-blue-300 text-xs">{{ font.value }}</div>
-                </div>
-                <button @click="editToken(font)" class="text-blue-400 hover:text-blue-300">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                  </svg>
-                </button>
-              </div>
-            </div>
+        </div>
+        
+        <div class="bg-gray-800 p-4 rounded-lg">
+          <h3 class="text-lg font-semibold mb-2">MCP Connection</h3>
+          <div class="flex items-center space-x-2">
+            <div :class="mcpConnected ? 'bg-green-500' : 'bg-red-500'" class="w-3 h-3 rounded-full"></div>
+            <span>{{ mcpConnected ? 'Connected' : 'Disconnected' }}</span>
           </div>
+        </div>
+        
+        <div class="bg-gray-800 p-4 rounded-lg">
+          <h3 class="text-lg font-semibold mb-2">Sync Status</h3>
+          <div class="flex items-center space-x-2">
+            <div :class="syncActive ? 'bg-green-500' : 'bg-yellow-500'" class="w-3 h-3 rounded-full"></div>
+            <span>{{ syncActive ? 'Active' : 'Inactive' }}</span>
+          </div>
+        </div>
+      </div>
 
-          <!-- Spacing -->
-          <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
-            <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
-              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
-              </svg>
-              Spacing
-            </h3>
-            <div class="space-y-3">
-              <div v-for="space in spacingTokens" :key="space.name" class="flex items-center justify-between">
-                <div>
-                  <div class="text-white text-sm font-medium">{{ space.name }}</div>
-                  <div class="text-blue-300 text-xs">{{ space.value }}</div>
+      <!-- Controls -->
+      <div class="flex flex-wrap gap-4 mb-8">
+        <button 
+          @click="connectMCP" 
+          :disabled="mcpConnected"
+          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 rounded-lg"
+        >
+          Connect MCP
+        </button>
+        <button 
+          @click="startRealtimeSync" 
+          :disabled="!mcpConnected || syncActive"
+          class="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 rounded-lg"
+        >
+          Start Sync
+        </button>
+        <button 
+          @click="stopRealtimeSync" 
+          :disabled="!syncActive"
+          class="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 rounded-lg"
+        >
+          Stop Sync
+        </button>
+        <button 
+          @click="disconnectMCP" 
+          :disabled="!mcpConnected"
+          class="px-4 py-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-500 rounded-lg"
+        >
+          Disconnect
+        </button>
+        <button 
+          @click="reloadTokensFromFile" 
+          class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg"
+        >
+          Reload Tokens
+        </button>
+        <button 
+          @click="showRawTokens = !showRawTokens" 
+          class="px-4 py-2 bg-orange-600 hover:bg-orange-700 rounded-lg"
+        >
+          {{ showRawTokens ? 'Hide' : 'Show' }} Raw Tokens
+        </button>
+      </div>
+
+      <!-- Raw Tokens Debug -->
+      <div v-if="showRawTokens" class="mb-8 bg-gray-800 rounded-lg p-4">
+        <h3 class="text-lg font-semibold mb-2">Raw Tokens Data</h3>
+        <pre class="text-xs overflow-auto max-h-96 bg-gray-900 p-4 rounded">{{ JSON.stringify(tokens, null, 2) }}</pre>
+      </div>
+
+      <!-- Token Categories -->
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <!-- Colors -->
+        <div class="bg-gray-800 rounded-lg p-6">
+          <h3 class="text-xl font-semibold mb-4 flex items-center">
+            <div class="w-4 h-4 bg-gradient-to-r from-red-500 to-blue-500 rounded mr-2"></div>
+            Colors ({{ colorTokenCount }})
+          </h3>
+          <div class="space-y-3 max-h-96 overflow-y-auto">
+            <div v-if="Object.keys(colorTokens).length === 0" class="text-gray-400 text-sm">
+              No color tokens found
+            </div>
+            <div v-for="(colorSet, setName) in colorTokens" :key="setName" class="space-y-3">
+              <h4 class="text-sm font-medium text-gray-300 border-b border-gray-600 pb-1">{{ setName }}</h4>
+              <div class="grid grid-cols-1 gap-3">
+                <div 
+                  v-for="(color, name) in colorSet" 
+                  :key="name"
+                  class="flex items-center space-x-3 p-3 bg-gray-700 rounded-lg"
+                >
+                  <div 
+                    class="w-8 h-8 rounded-lg border-2 border-gray-600 flex-shrink-0 shadow-sm"
+                    :style="{ backgroundColor: color.value }"
+                  ></div>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-sm font-medium text-gray-200 break-words">{{ name }}</div>
+                    <div class="text-xs text-gray-400 break-all">{{ color.value }}</div>
+                  </div>
+                  <button 
+                    @click="editToken('color', setName, name, color.value)"
+                    class="text-xs bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded flex-shrink-0 transition-colors"
+                  >
+                    Edit
+                  </button>
                 </div>
-                <button @click="editToken(space)" class="text-blue-400 hover:text-blue-300">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                  </svg>
-                </button>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Preview & Editor -->
-        <div class="lg:col-span-2 space-y-6">
-          <!-- Live Preview -->
-          <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
-            <h3 class="text-lg font-semibold text-white mb-4">Live Preview</h3>
-            <div class="bg-white rounded-lg p-6 shadow-lg">
-              <div class="space-y-4">
-                <h1 class="text-3xl font-bold" :style="{ color: selectedColorToken?.value || '#000' }">
-                  Sample Heading
-                </h1>
-                <p class="text-gray-600" :style="{ fontSize: selectedTypographyToken?.value || '16px' }">
-                  This is a sample paragraph that demonstrates how your design tokens will look in practice.
-                </p>
-                <div class="flex space-x-4">
-                  <button class="px-4 py-2 rounded-lg text-white font-medium" :style="{ backgroundColor: colorTokens[0]?.value || '#3B82F6' }">
-                    Primary Button
-                  </button>
-                  <button class="px-4 py-2 rounded-lg border text-gray-700 font-medium">
-                    Secondary Button
+        <!-- Typography -->
+        <div class="bg-gray-800 rounded-lg p-6">
+          <h3 class="text-xl font-semibold mb-4 flex items-center">
+            <div class="w-4 h-4 bg-blue-500 rounded mr-2"></div>
+            Typography ({{ typographyTokenCount }})
+          </h3>
+          <div class="space-y-3 max-h-96 overflow-y-auto">
+            <div v-if="Object.keys(typographyTokens).length === 0" class="text-gray-400 text-sm">
+              No typography tokens found
+            </div>
+            <div v-for="(typographySet, setName) in typographyTokens" :key="setName" class="space-y-3">
+              <h4 class="text-sm font-medium text-gray-300 border-b border-gray-600 pb-1">{{ setName }}</h4>
+              <div class="space-y-3">
+                <div 
+                  v-for="(typography, name) in typographySet" 
+                  :key="name"
+                  class="p-3 bg-gray-700 rounded-lg"
+                >
+                  <div class="text-sm font-medium text-gray-200 mb-2 break-words">{{ name }}</div>
+                  
+                  <!-- Typography Preview -->
+                  <div 
+                    class="mb-3 p-2 bg-gray-800 rounded border-l-4 border-blue-500 overflow-hidden"
+                    :style="getTypographyStyle(typography.value)"
+                  >
+                    <div class="text-xs text-gray-400 mb-1">Preview:</div>
+                    <div class="truncate">{{ name }} - Sample Text</div>
+                  </div>
+                  
+                  <!-- Typography Details -->
+                  <div class="text-xs text-gray-400 space-y-1">
+                    <div class="flex justify-between">
+                      <span>Font:</span>
+                      <span class="text-gray-300 break-all">{{ typography.value.fontFamily }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span>Size:</span>
+                      <span class="text-gray-300">{{ typography.value.fontSize }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span>Weight:</span>
+                      <span class="text-gray-300">{{ typography.value.fontWeight }}</span>
+                    </div>
+                    <div v-if="typography.value.lineHeight" class="flex justify-between">
+                      <span>Line Height:</span>
+                      <span class="text-gray-300">{{ typography.value.lineHeight }}</span>
+                    </div>
+                    <div v-if="typography.value.letterSpacing" class="flex justify-between">
+                      <span>Letter Spacing:</span>
+                      <span class="text-gray-300">{{ typography.value.letterSpacing }}</span>
+                    </div>
+                  </div>
+                  
+                  <button 
+                    @click="editToken('typography', setName, name, typography.value)"
+                    class="text-xs bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded mt-3 transition-colors"
+                  >
+                    Edit
                   </button>
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- Token Editor -->
-          <div v-if="editingToken" class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
-            <h3 class="text-lg font-semibold text-white mb-4">Edit Token</h3>
-            <div class="space-y-4">
-              <div>
-                <label class="block text-white text-sm font-medium mb-2">Name</label>
-                <input 
-                  v-model="editingToken.name" 
-                  type="text" 
-                  class="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        <!-- Spacing -->
+        <div class="bg-gray-800 rounded-lg p-6">
+          <h3 class="text-xl font-semibold mb-4 flex items-center">
+            <div class="w-4 h-4 bg-green-500 rounded mr-2"></div>
+            Spacing ({{ spacingTokenCount }})
+          </h3>
+          <div class="space-y-3 max-h-96 overflow-y-auto">
+            <div v-if="Object.keys(spacingTokens).length === 0" class="text-gray-400 text-sm">
+              No spacing tokens found
+            </div>
+            <div v-for="(spacingSet, setName) in spacingTokens" :key="setName" class="space-y-3">
+              <h4 class="text-sm font-medium text-gray-300 border-b border-gray-600 pb-1">{{ setName }}</h4>
+              <div class="space-y-3">
+                <div 
+                  v-for="(spacing, name) in spacingSet" 
+                  :key="name"
+                  class="flex items-center justify-between p-3 bg-gray-700 rounded-lg"
                 >
-              </div>
-              <div>
-                <label class="block text-white text-sm font-medium mb-2">Value</label>
-                <input 
-                  v-model="editingToken.value" 
-                  type="text" 
-                  class="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-              </div>
-              <div class="flex space-x-3">
-                <button @click="saveToken" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
-                  Save Changes
-                </button>
-                <button @click="cancelEdit" class="border border-white/30 hover:border-white/50 text-white px-4 py-2 rounded-lg text-sm font-medium transition hover:bg-white/10">
-                  Cancel
-                </button>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-sm font-medium text-gray-200 break-words">{{ name }}</div>
+                    <div class="text-xs text-gray-400">{{ spacing.value }}</div>
+                  </div>
+                  <div 
+                    class="bg-blue-500 rounded"
+                    :style="{ width: spacing.value, height: '8px' }"
+                  ></div>
+                  <button 
+                    @click="editToken('spacing', setName, name, spacing.value)"
+                    class="text-xs bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded"
+                  >
+                    Edit
+                  </button>
+                </div>
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- Sync Status -->
-          <div class="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
-            <h3 class="text-lg font-semibold text-white mb-4">Sync Status</h3>
-            <div class="space-y-3">
-              <div class="flex items-center justify-between">
-                <span class="text-white">Last sync:</span>
-                <span class="text-blue-300">{{ lastSyncTime || 'Never' }}</span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-white">Tokens synced:</span>
-                <span class="text-blue-300">{{ totalTokens }}</span>
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-white">Status:</span>
-                <span :class="syncStatus === 'success' ? 'text-green-400' : syncStatus === 'error' ? 'text-red-400' : 'text-yellow-400'">
-                  {{ syncStatusText }}
-                </span>
+        <!-- Border Radius -->
+        <div class="bg-gray-800 rounded-lg p-6">
+          <h3 class="text-xl font-semibold mb-4 flex items-center">
+            <div class="w-4 h-4 bg-yellow-500 rounded mr-2"></div>
+            Border Radius
+          </h3>
+          <div class="space-y-3 max-h-96 overflow-y-auto">
+            <div v-if="Object.keys(borderRadiusTokens).length === 0" class="text-gray-400 text-sm">
+              No border radius tokens found
+            </div>
+            <div v-for="(radiusSet, setName) in borderRadiusTokens" :key="setName" class="space-y-2">
+              <h4 class="text-sm font-medium text-gray-300">{{ setName }}</h4>
+              <div class="space-y-2">
+                <div 
+                  v-for="(radius, name) in radiusSet" 
+                  :key="name"
+                  class="flex items-center justify-between p-2 bg-gray-700 rounded"
+                >
+                  <div>
+                    <div class="text-xs font-medium">{{ name }}</div>
+                    <div class="text-xs text-gray-400">{{ radius.value }}</div>
+                  </div>
+                  <div 
+                    class="bg-blue-500"
+                    :style="{ 
+                      width: '24px', 
+                      height: '24px', 
+                      borderRadius: radius.value 
+                    }"
+                  ></div>
+                  <button 
+                    @click="editToken('borderRadius', setName, name, radius.value)"
+                    class="text-xs bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded"
+                  >
+                    Edit
+                  </button>
+                </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Borders -->
+        <div class="bg-gray-800 rounded-lg p-6">
+          <h3 class="text-xl font-semibold mb-4 flex items-center">
+            <div class="w-4 h-4 bg-purple-500 rounded mr-2"></div>
+            Borders
+          </h3>
+          <div class="space-y-3 max-h-96 overflow-y-auto">
+            <div v-if="Object.keys(borderTokens).length === 0" class="text-gray-400 text-sm">
+              No border tokens found
+            </div>
+            <div v-for="(borderSet, setName) in borderTokens" :key="setName" class="space-y-2">
+              <h4 class="text-sm font-medium text-gray-300">{{ setName }}</h4>
+              <div class="space-y-2">
+                <div 
+                  v-for="(border, name) in borderSet" 
+                  :key="name"
+                  class="p-2 bg-gray-700 rounded"
+                >
+                  <div class="text-xs font-medium mb-1">{{ name }}</div>
+                  <div class="text-xs text-gray-400 space-y-1">
+                    <div>Color: {{ border.value.color }}</div>
+                    <div>Width: {{ border.value.width }}</div>
+                    <div>Style: {{ border.value.style }}</div>
+                  </div>
+                  <button 
+                    @click="editToken('border', setName, name, border.value)"
+                    class="text-xs bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded mt-2"
+                  >
+                    Edit
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Font Sizes -->
+        <div class="bg-gray-800 rounded-lg p-6">
+          <h3 class="text-xl font-semibold mb-4 flex items-center">
+            <div class="w-4 h-4 bg-pink-500 rounded mr-2"></div>
+            Font Sizes
+          </h3>
+          <div class="space-y-3 max-h-96 overflow-y-auto">
+            <div v-if="Object.keys(fontSizeTokens).length === 0" class="text-gray-400 text-sm">
+              No font size tokens found
+            </div>
+            <div v-for="(fontSizeSet, setName) in fontSizeTokens" :key="setName" class="space-y-3">
+              <h4 class="text-sm font-medium text-gray-300 border-b border-gray-600 pb-1">{{ setName }}</h4>
+              <div class="space-y-3">
+                <div 
+                  v-for="(fontSize, name) in fontSizeSet" 
+                  :key="name"
+                  class="flex items-center justify-between p-3 bg-gray-700 rounded-lg"
+                >
+                  <div class="flex-1 min-w-0">
+                    <div class="text-sm font-medium text-gray-200 break-words">{{ name }}</div>
+                    <div class="text-xs text-gray-400">{{ fontSize.value }}</div>
+                  </div>
+                  <div 
+                    class="text-white mx-3"
+                    :style="{ fontSize: fontSize.value }"
+                  >
+                    Aa
+                  </div>
+                  <button 
+                    @click="editToken('fontSize', setName, name, fontSize.value)"
+                    class="text-xs bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded flex-shrink-0 transition-colors"
+                  >
+                    Edit
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Font Families -->
+        <div class="bg-gray-800 rounded-lg p-6">
+          <h3 class="text-xl font-semibold mb-4 flex items-center">
+            <div class="w-4 h-4 bg-indigo-500 rounded mr-2"></div>
+            Font Families ({{ fontFamilyTokenCount }})
+          </h3>
+          <div class="space-y-3 max-h-96 overflow-y-auto">
+            <div v-if="Object.keys(fontFamilyTokens).length === 0" class="text-gray-400 text-sm">
+              No font family tokens found
+            </div>
+            <div v-for="(fontFamilySet, setName) in fontFamilyTokens" :key="setName" class="space-y-3">
+              <h4 class="text-sm font-medium text-gray-300 border-b border-gray-600 pb-1">{{ setName }}</h4>
+              <div class="space-y-3">
+                <div 
+                  v-for="(fontFamily, name) in fontFamilySet" 
+                  :key="name"
+                  class="flex items-center justify-between p-3 bg-gray-700 rounded-lg"
+                >
+                  <div class="flex-1 min-w-0">
+                    <div class="text-sm font-medium text-gray-200 break-words">{{ name }}</div>
+                    <div class="text-xs text-gray-400">{{ fontFamily.value }}</div>
+                  </div>
+                  <div 
+                    class="text-white mx-3 text-lg"
+                    :style="{ fontFamily: fontFamily.value }"
+                  >
+                    Aa
+                  </div>
+                  <button 
+                    @click="editToken('fontFamily', setName, name, fontFamily.value)"
+                    class="text-xs bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded flex-shrink-0 transition-colors"
+                  >
+                    Edit
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Font Weights -->
+        <div class="bg-gray-800 rounded-lg p-6">
+          <h3 class="text-xl font-semibold mb-4 flex items-center">
+            <div class="w-4 h-4 bg-teal-500 rounded mr-2"></div>
+            Font Weights ({{ fontWeightTokenCount }})
+          </h3>
+          <div class="space-y-3 max-h-96 overflow-y-auto">
+            <div v-if="Object.keys(fontWeightTokens).length === 0" class="text-gray-400 text-sm">
+              No font weight tokens found
+            </div>
+            <div v-for="(fontWeightSet, setName) in fontWeightTokens" :key="setName" class="space-y-3">
+              <h4 class="text-sm font-medium text-gray-300 border-b border-gray-600 pb-1">{{ setName }}</h4>
+              <div class="space-y-3">
+                <div 
+                  v-for="(fontWeight, name) in fontWeightSet" 
+                  :key="name"
+                  class="flex items-center justify-between p-3 bg-gray-700 rounded-lg"
+                >
+                  <div class="flex-1 min-w-0">
+                    <div class="text-sm font-medium text-gray-200 break-words">{{ name }}</div>
+                    <div class="text-xs text-gray-400">{{ fontWeight.value }}</div>
+                  </div>
+                  <div 
+                    class="text-white mx-3 text-lg"
+                    :style="{ fontWeight: fontWeight.value }"
+                  >
+                    Aa
+                  </div>
+                  <button 
+                    @click="editToken('fontWeight', setName, name, fontWeight.value)"
+                    class="text-xs bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded flex-shrink-0 transition-colors"
+                  >
+                    Edit
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Preview -->
+      <div class="mt-8 bg-gray-800 rounded-lg p-6">
+        <h3 class="text-xl font-semibold mb-4">Live Preview</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="space-y-4">
+            <h4 class="text-lg font-medium">Typography Preview</h4>
+            <div class="space-y-2 max-h-64 overflow-y-auto">
+              <div 
+                v-for="(typography, name) in previewTypography" 
+                :key="name"
+                class="p-3 bg-gray-700 rounded overflow-hidden"
+                :style="getTypographyStyle(typography.value)"
+              >
+                <div class="text-xs text-gray-400 mb-1">{{ name }}</div>
+                <div class="truncate">Sample Text</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="space-y-4">
+            <h4 class="text-lg font-medium">Color Preview</h4>
+            <div class="grid grid-cols-2 gap-2">
+              <div 
+                v-for="(color, name) in previewColors" 
+                :key="name"
+                class="p-3 rounded text-center text-sm"
+                :style="{ backgroundColor: color.value, color: getContrastColor(color.value) }"
+              >
+                {{ name }}
+              </div>
+            </div>
+          </div>
+          
+          <div class="space-y-4">
+            <h4 class="text-lg font-medium">Component Preview</h4>
+            <div class="space-y-3">
+              <button 
+                class="px-4 py-2 rounded"
+                :style="{ 
+                  backgroundColor: previewColors.primary?.value || '#3b82f6',
+                  color: 'white'
+                }"
+              >
+                Primary Button
+              </button>
+              <div 
+                class="p-4 rounded border"
+                :style="{ 
+                  borderColor: previewColors.neutral?.['500']?.value || '#6b7280',
+                  borderWidth: '1px',
+                  borderStyle: 'solid'
+                }"
+              >
+                Card with border
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div v-if="showEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md">
+        <h3 class="text-xl font-semibold mb-4">Edit Token</h3>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-1">Token Name</label>
+            <input 
+              v-model="editingToken.name" 
+              class="w-full p-2 bg-gray-700 rounded border border-gray-600"
+              readonly
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1">Value</label>
+            <input 
+              v-model="editingToken.value" 
+              class="w-full p-2 bg-gray-700 rounded border border-gray-600"
+              :type="editingToken.type === 'color' ? 'color' : 'text'"
+            />
+          </div>
+          <div class="flex space-x-2">
+            <button 
+              @click="saveToken"
+              class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded"
+            >
+              Save
+            </button>
+            <button 
+              @click="showEditModal = false"
+              class="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       </div>
@@ -298,683 +560,425 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { figmaService, type FigmaToken as FigmaTokenType, type MCPConnection } from '../services/figmaService'
-
-interface DesignToken {
-  name: string
-  value: string
-  category: 'color' | 'typography' | 'spacing'
-  figmaId?: string
-}
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 
 // State
 const figmaConnected = ref(false)
-const figmaFileName = ref('')
-const lastSyncTime = ref('')
-const syncStatus = ref<'idle' | 'syncing' | 'success' | 'error'>('idle')
-const editingToken = ref<DesignToken | null>(null)
-const originalToken = ref<DesignToken | null>(null)
-
-// MCP State
 const mcpConnected = ref(false)
-const mcpServerUrl = ref('https://mcp-server.example.com')
-const mcpApiKey = ref('test-mcp-api-key')
-const mcpProjectId = ref('vue-project')
-const realtimeSyncEnabled = ref(false)
+const syncActive = ref(false)
+const tokens = ref<any>({})
+const showEditModal = ref(false)
+const editingToken = ref<any>({})
+const showRawTokens = ref(false)
+const lastUpdateTime = ref('')
 
-// Design Tokens
-const colorTokens = ref<DesignToken[]>([
-  // Primary Colors
-  { name: 'Primary 50', value: '#EFF6FF', category: 'color' },
-  { name: 'Primary 100', value: '#DBEAFE', category: 'color' },
-  { name: 'Primary 200', value: '#BFDBFE', category: 'color' },
-  { name: 'Primary 300', value: '#93C5FD', category: 'color' },
-  { name: 'Primary 400', value: '#60A5FA', category: 'color' },
-  { name: 'Primary 500', value: '#3B82F6', category: 'color' },
-  { name: 'Primary 600', value: '#2563EB', category: 'color' },
-  { name: 'Primary 700', value: '#1D4ED8', category: 'color' },
-  { name: 'Primary 800', value: '#1E40AF', category: 'color' },
-  { name: 'Primary 900', value: '#1E3A8A', category: 'color' },
-  { name: 'Primary 950', value: '#172554', category: 'color' },
+// Computed properties for token categories
+const colorTokens = computed(() => {
+  const colors: any = {}
   
-  // Secondary Colors
-  { name: 'Secondary 50', value: '#F5F3FF', category: 'color' },
-  { name: 'Secondary 100', value: '#EDE9FE', category: 'color' },
-  { name: 'Secondary 200', value: '#DDD6FE', category: 'color' },
-  { name: 'Secondary 300', value: '#C4B5FD', category: 'color' },
-  { name: 'Secondary 400', value: '#A78BFA', category: 'color' },
-  { name: 'Secondary 500', value: '#8B5CF6', category: 'color' },
-  { name: 'Secondary 600', value: '#7C3AED', category: 'color' },
-  { name: 'Secondary 700', value: '#6D28D9', category: 'color' },
-  { name: 'Secondary 800', value: '#5B21B6', category: 'color' },
-  { name: 'Secondary 900', value: '#4C1D95', category: 'color' },
-  { name: 'Secondary 950', value: '#2E1065', category: 'color' },
-  
-  // Success Colors
-  { name: 'Success 50', value: '#ECFDF5', category: 'color' },
-  { name: 'Success 100', value: '#D1FAE5', category: 'color' },
-  { name: 'Success 200', value: '#A7F3D0', category: 'color' },
-  { name: 'Success 300', value: '#6EE7B7', category: 'color' },
-  { name: 'Success 400', value: '#34D399', category: 'color' },
-  { name: 'Success 500', value: '#10B981', category: 'color' },
-  { name: 'Success 600', value: '#059669', category: 'color' },
-  { name: 'Success 700', value: '#047857', category: 'color' },
-  { name: 'Success 800', value: '#065F46', category: 'color' },
-  { name: 'Success 900', value: '#064E3B', category: 'color' },
-  { name: 'Success 950', value: '#022C22', category: 'color' },
-  
-  // Warning Colors
-  { name: 'Warning 50', value: '#FFFBEB', category: 'color' },
-  { name: 'Warning 100', value: '#FEF3C7', category: 'color' },
-  { name: 'Warning 200', value: '#FDE68A', category: 'color' },
-  { name: 'Warning 300', value: '#FCD34D', category: 'color' },
-  { name: 'Warning 400', value: '#FBBF24', category: 'color' },
-  { name: 'Warning 500', value: '#F59E0B', category: 'color' },
-  { name: 'Warning 600', value: '#D97706', category: 'color' },
-  { name: 'Warning 700', value: '#B45309', category: 'color' },
-  { name: 'Warning 800', value: '#92400E', category: 'color' },
-  { name: 'Warning 900', value: '#78350F', category: 'color' },
-  { name: 'Warning 950', value: '#451A03', category: 'color' },
-  
-  // Error Colors
-  { name: 'Error 50', value: '#FEF2F2', category: 'color' },
-  { name: 'Error 100', value: '#FEE2E2', category: 'color' },
-  { name: 'Error 200', value: '#FECACA', category: 'color' },
-  { name: 'Error 300', value: '#FCA5A5', category: 'color' },
-  { name: 'Error 400', value: '#F87171', category: 'color' },
-  { name: 'Error 500', value: '#EF4444', category: 'color' },
-  { name: 'Error 600', value: '#DC2626', category: 'color' },
-  { name: 'Error 700', value: '#B91C1C', category: 'color' },
-  { name: 'Error 800', value: '#991B1B', category: 'color' },
-  { name: 'Error 900', value: '#7F1D1D', category: 'color' },
-  { name: 'Error 950', value: '#450A0A', category: 'color' },
-  
-  // Neutral Colors
-  { name: 'Neutral 50', value: '#F9FAFB', category: 'color' },
-  { name: 'Neutral 100', value: '#F3F4F6', category: 'color' },
-  { name: 'Neutral 200', value: '#E5E7EB', category: 'color' },
-  { name: 'Neutral 300', value: '#D1D5DB', category: 'color' },
-  { name: 'Neutral 400', value: '#9CA3AF', category: 'color' },
-  { name: 'Neutral 500', value: '#6B7280', category: 'color' },
-  { name: 'Neutral 600', value: '#4B5563', category: 'color' },
-  { name: 'Neutral 700', value: '#374151', category: 'color' },
-  { name: 'Neutral 800', value: '#1F2937', category: 'color' },
-  { name: 'Neutral 900', value: '#111827', category: 'color' },
-  { name: 'Neutral 950', value: '#030712', category: 'color' },
-  
-  // System Colors
-  { name: 'Background Primary', value: '#FFFFFF', category: 'color' },
-  { name: 'Background Secondary', value: '#F9FAFB', category: 'color' },
-  { name: 'Background Tertiary', value: '#F3F4F6', category: 'color' },
-  { name: 'Background Dark', value: '#111827', category: 'color' },
-  { name: 'Background Dark Secondary', value: '#1F2937', category: 'color' },
-  { name: 'Background Dark Tertiary', value: '#374151', category: 'color' },
-  
-  // Text Colors
-  { name: 'Text Primary', value: '#111827', category: 'color' },
-  { name: 'Text Secondary', value: '#6B7280', category: 'color' },
-  { name: 'Text Tertiary', value: '#9CA3AF', category: 'color' },
-  { name: 'Text Inverse', value: '#FFFFFF', category: 'color' },
-  { name: 'Text Inverse Secondary', value: '#D1D5DB', category: 'color' },
-  
-  // Border Colors
-  { name: 'Border Primary', value: '#E5E7EB', category: 'color' },
-  { name: 'Border Secondary', value: '#D1D5DB', category: 'color' },
-  { name: 'Border Dark', value: '#374151', category: 'color' },
-  { name: 'Border Dark Secondary', value: '#4B5563', category: 'color' },
-  
-  // Overlay Colors
-  { name: 'Overlay Light', value: 'rgba(0, 0, 0, 0.1)', category: 'color' },
-  { name: 'Overlay Medium', value: 'rgba(0, 0, 0, 0.3)', category: 'color' },
-  { name: 'Overlay Dark', value: 'rgba(0, 0, 0, 0.5)', category: 'color' },
-  { name: 'Overlay Darker', value: 'rgba(0, 0, 0, 0.7)', category: 'color' }
-])
-
-const typographyTokens = ref<DesignToken[]>([
-  { name: 'Heading Large', value: '32px', category: 'typography' },
-  { name: 'Heading Medium', value: '24px', category: 'typography' },
-  { name: 'Heading Small', value: '20px', category: 'typography' },
-  { name: 'Body Large', value: '18px', category: 'typography' },
-  { name: 'Body Medium', value: '16px', category: 'typography' },
-  { name: 'Body Small', value: '14px', category: 'typography' }
-])
-
-const spacingTokens = ref<DesignToken[]>([
-  { name: 'Spacing XS', value: '4px', category: 'spacing' },
-  { name: 'Spacing SM', value: '8px', category: 'spacing' },
-  { name: 'Spacing MD', value: '16px', category: 'spacing' },
-  { name: 'Spacing LG', value: '24px', category: 'spacing' },
-  { name: 'Spacing XL', value: '32px', category: 'spacing' },
-  { name: 'Spacing XXL', value: '48px', category: 'spacing' }
-])
-
-// Computed
-const totalTokens = computed(() => 
-  colorTokens.value.length + typographyTokens.value.length + spacingTokens.value.length
-)
-
-const syncStatusText = computed(() => {
-  switch (syncStatus.value) {
-    case 'syncing': return 'Syncing...'
-    case 'success': return 'Synced successfully'
-    case 'error': return 'Sync failed'
-    default: return 'Ready to sync'
-  }
-})
-
-// MCP 연결 상태 텍스트
-const mcpStatusText = computed(() => {
-  if (mcpConnected.value && realtimeSyncEnabled.value) {
-    return 'Realtime Sync Active'
-  } else if (mcpConnected.value) {
-    return 'Connected'
-  } else {
-    return 'Not Connected'
-  }
-})
-
-const selectedColorToken = computed(() => colorTokens.value[0])
-const selectedTypographyToken = computed(() => typographyTokens.value[4]) // Body Medium
-
-// Methods
-const connectFigma = async () => {
-  if (figmaConnected.value) {
-    figmaService.stopRealtimeSync()
-    figmaConnected.value = false
-    figmaFileName.value = ''
-    return
-  }
-
-  try {
-    // 테스트 모드로 연결 (실제 토큰 없이도 작동)
-    syncStatus.value = 'syncing'
-    const success = await figmaService.connect('test-token', 'ZPGmro2WzI9PakODFaybzs')
+  const findColorTokens = (obj: any, path: string[] = []) => {
+    if (!obj || typeof obj !== 'object') return
     
-    if (success) {
-      figmaConnected.value = true
-      figmaFileName.value = 'GuideTest'
-      lastSyncTime.value = new Date().toLocaleString()
-      syncStatus.value = 'success'
-      showNotification('Successfully connected to Figma! (Test Mode)', 'success')
+    Object.entries(obj).forEach(([key, value]: [string, any]) => {
+      const currentPath = [...path, key]
       
-      // 실제 tokens.json 파일에서 토큰 로드
-      try {
-        const response = await fetch('/tokens.json', { 
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
-          }
-        })
-        if (response.ok) {
-          const tokensData = await response.json()
-          
-          // Primary 색상 토큰들을 추출
-          const primaryTokens: DesignToken[] = []
-          if (tokensData.global && tokensData.global.primary) {
-            Object.entries(tokensData.global.primary).forEach(([key, token]: [string, any]) => {
-              primaryTokens.push({
-                name: `Primary ${key}`,
-                value: token.value,
-                category: 'color' as const
-              })
-            })
-          }
-          
-          // FigmaSet의 Primary 토큰들도 추가
-          if (tokensData.FigmaSet && tokensData.FigmaSet.Primary) {
-            Object.entries(tokensData.FigmaSet.Primary).forEach(([key, token]: [string, any]) => {
-              primaryTokens.push({
-                name: `Primary / ${key}`,
-                value: token.value,
-                category: 'color' as const
-              })
-            })
-          }
-          
-          colorTokens.value = primaryTokens
-                console.log('🎨 tokens.json에서 토큰 로드 완료:', primaryTokens.length)
-      console.log('📊 888 업데이트된 토큰들:', primaryTokens.filter(t => t.value === '#888888'))
-      
-      // MCP 자동 연결
-      try {
-        await figmaService.connectMCP(mcpServerUrl.value, mcpApiKey.value, mcpProjectId.value)
-        mcpConnected.value = true
-        console.log('✅ MCP 자동 연결 성공')
+      if (value?.type === 'color') {
+        // This is a color token
+        const setName = path.length > 0 ? path[0] : 'root'
+        const tokenName = currentPath.join('.')
         
-        // 실시간 동기화 시작
-        figmaService.startRealtimeSync()
-        realtimeSyncEnabled.value = true
-        console.log('🔄 실시간 동기화 시작')
-        showNotification('MCP connected and realtime sync started!', 'success')
-      } catch (mcpError) {
-        console.log('⚠️ MCP 자동 연결 실패, 테스트 모드로 진행:', mcpError)
-        // MCP 연결 실패해도 Figma는 정상 작동
-      }
-    } else {
-      // fallback: 테스트 토큰 사용
-      const tokens = figmaService.getTestTokens()
-      colorTokens.value = tokens.map(token => ({
-        name: token.name,
-        value: token.value,
-        category: 'color' as const
-      }))
-      console.log('🎨 Figma 테스트 토큰 로드 완료 (fallback):', tokens.length)
-      
-      // MCP 자동 연결 (fallback 모드에서도)
-      try {
-        await figmaService.connectMCP(mcpServerUrl.value, mcpApiKey.value, mcpProjectId.value)
-        mcpConnected.value = true
-        figmaService.startRealtimeSync()
-        realtimeSyncEnabled.value = true
-        console.log('✅ MCP 자동 연결 성공 (fallback 모드)')
-        showNotification('MCP connected and realtime sync started!', 'success')
-      } catch (mcpError) {
-        console.log('⚠️ MCP 자동 연결 실패 (fallback 모드):', mcpError)
-      }
-    }
-  } catch (error) {
-    console.error('❌ tokens.json 로드 실패, 테스트 토큰 사용:', error)
-    // fallback: 테스트 토큰 사용
-    const tokens = figmaService.getTestTokens()
-    colorTokens.value = tokens.map(token => ({
-      name: token.name,
-      value: token.value,
-      category: 'color' as const
-    }))
-    
-    // MCP 자동 연결 (에러 모드에서도)
-    try {
-      await figmaService.connectMCP(mcpServerUrl.value, mcpApiKey.value, mcpProjectId.value)
-      mcpConnected.value = true
-      figmaService.startRealtimeSync()
-      realtimeSyncEnabled.value = true
-      console.log('✅ MCP 자동 연결 성공 (에러 모드)')
-      showNotification('MCP connected and realtime sync started!', 'success')
-    } catch (mcpError) {
-      console.log('⚠️ MCP 자동 연결 실패 (에러 모드):', mcpError)
-    }
-  }
-} else {
-  syncStatus.value = 'error'
-  showNotification('Failed to connect to Figma', 'error')
-}
-} catch (error) {
-syncStatus.value = 'error'
-showNotification('Failed to connect to Figma', 'error')
-}
-}
-
-const syncWithFigma = async () => {
-  if (!figmaConnected.value) {
-    showNotification('Please connect to Figma first', 'error')
-    return
-  }
-
-  syncStatus.value = 'syncing'
-  
-  try {
-    // 실제 Figma API 호출
-    // const figmaTokens = await figmaService.extractTokens('your-figma-file-key')
-    
-    // 시뮬레이션: Figma에서 가져온 토큰 데이터
-    const figmaTokens: FigmaTokenType[] = [
-      // Primary Colors
-      { id: '1', name: 'Primary 50', value: '#EFF6FF', type: 'color' },
-      { id: '2', name: 'Primary 100', value: '#DBEAFE', type: 'color' },
-      { id: '3', name: 'Primary 200', value: '#BFDBFE', type: 'color' },
-      { id: '4', name: 'Primary 300', value: '#93C5FD', type: 'color' },
-      { id: '5', name: 'Primary 400', value: '#60A5FA', type: 'color' },
-      { id: '6', name: 'Primary 500', value: '#3B82F6', type: 'color' },
-      { id: '7', name: 'Primary 600', value: '#2563EB', type: 'color' },
-      { id: '8', name: 'Primary 700', value: '#1D4ED8', type: 'color' },
-      { id: '9', name: 'Primary 800', value: '#1E40AF', type: 'color' },
-      { id: '10', name: 'Primary 900', value: '#1E3A8A', type: 'color' },
-      { id: '11', name: 'Primary 950', value: '#172554', type: 'color' },
-      
-      // Secondary Colors
-      { id: '12', name: 'Secondary 50', value: '#F5F3FF', type: 'color' },
-      { id: '13', name: 'Secondary 100', value: '#EDE9FE', type: 'color' },
-      { id: '14', name: 'Secondary 200', value: '#DDD6FE', type: 'color' },
-      { id: '15', name: 'Secondary 300', value: '#C4B5FD', type: 'color' },
-      { id: '16', name: 'Secondary 400', value: '#A78BFA', type: 'color' },
-      { id: '17', name: 'Secondary 500', value: '#8B5CF6', type: 'color' },
-      { id: '18', name: 'Secondary 600', value: '#7C3AED', type: 'color' },
-      { id: '19', name: 'Secondary 700', value: '#6D28D9', type: 'color' },
-      { id: '20', name: 'Secondary 800', value: '#5B21B6', type: 'color' },
-      { id: '21', name: 'Secondary 900', value: '#4C1D95', type: 'color' },
-      { id: '22', name: 'Secondary 950', value: '#2E1065', type: 'color' },
-      
-      // Success Colors
-      { id: '23', name: 'Success 50', value: '#ECFDF5', type: 'color' },
-      { id: '24', name: 'Success 100', value: '#D1FAE5', type: 'color' },
-      { id: '25', name: 'Success 200', value: '#A7F3D0', type: 'color' },
-      { id: '26', name: 'Success 300', value: '#6EE7B7', type: 'color' },
-      { id: '27', name: 'Success 400', value: '#34D399', type: 'color' },
-      { id: '28', name: 'Success 500', value: '#10B981', type: 'color' },
-      { id: '29', name: 'Success 600', value: '#059669', type: 'color' },
-      { id: '30', name: 'Success 700', value: '#047857', type: 'color' },
-      { id: '31', name: 'Success 800', value: '#065F46', type: 'color' },
-      { id: '32', name: 'Success 900', value: '#064E3B', type: 'color' },
-      { id: '33', name: 'Success 950', value: '#022C22', type: 'color' },
-      
-      // Warning Colors
-      { id: '34', name: 'Warning 50', value: '#FFFBEB', type: 'color' },
-      { id: '35', name: 'Warning 100', value: '#FEF3C7', type: 'color' },
-      { id: '36', name: 'Warning 200', value: '#FDE68A', type: 'color' },
-      { id: '37', name: 'Warning 300', value: '#FCD34D', type: 'color' },
-      { id: '38', name: 'Warning 400', value: '#FBBF24', type: 'color' },
-      { id: '39', name: 'Warning 500', value: '#F59E0B', type: 'color' },
-      { id: '40', name: 'Warning 600', value: '#D97706', type: 'color' },
-      { id: '41', name: 'Warning 700', value: '#B45309', type: 'color' },
-      { id: '42', name: 'Warning 800', value: '#92400E', type: 'color' },
-      { id: '43', name: 'Warning 900', value: '#78350F', type: 'color' },
-      { id: '44', name: 'Warning 950', value: '#451A03', type: 'color' },
-      
-      // Error Colors
-      { id: '45', name: 'Error 50', value: '#FEF2F2', type: 'color' },
-      { id: '46', name: 'Error 100', value: '#FEE2E2', type: 'color' },
-      { id: '47', name: 'Error 200', value: '#FECACA', type: 'color' },
-      { id: '48', name: 'Error 300', value: '#FCA5A5', type: 'color' },
-      { id: '49', name: 'Error 400', value: '#F87171', type: 'color' },
-      { id: '50', name: 'Error 500', value: '#EF4444', type: 'color' },
-      { id: '51', name: 'Error 600', value: '#DC2626', type: 'color' },
-      { id: '52', name: 'Error 700', value: '#B91C1C', type: 'color' },
-      { id: '53', name: 'Error 800', value: '#991B1B', type: 'color' },
-      { id: '54', name: 'Error 900', value: '#7F1D1D', type: 'color' },
-      { id: '55', name: 'Error 950', value: '#450A0A', type: 'color' },
-      
-      // Neutral Colors
-      { id: '56', name: 'Neutral 50', value: '#F9FAFB', type: 'color' },
-      { id: '57', name: 'Neutral 100', value: '#F3F4F6', type: 'color' },
-      { id: '58', name: 'Neutral 200', value: '#E5E7EB', type: 'color' },
-      { id: '59', name: 'Neutral 300', value: '#D1D5DB', type: 'color' },
-      { id: '60', name: 'Neutral 400', value: '#9CA3AF', type: 'color' },
-      { id: '61', name: 'Neutral 500', value: '#6B7280', type: 'color' },
-      { id: '62', name: 'Neutral 600', value: '#4B5563', type: 'color' },
-      { id: '63', name: 'Neutral 700', value: '#374151', type: 'color' },
-      { id: '64', name: 'Neutral 800', value: '#1F2937', type: 'color' },
-      { id: '65', name: 'Neutral 900', value: '#111827', type: 'color' },
-      { id: '66', name: 'Neutral 950', value: '#030712', type: 'color' },
-      
-      // System Colors
-      { id: '67', name: 'Background Primary', value: '#FFFFFF', type: 'color' },
-      { id: '68', name: 'Background Secondary', value: '#F9FAFB', type: 'color' },
-      { id: '69', name: 'Background Tertiary', value: '#F3F4F6', type: 'color' },
-      { id: '70', name: 'Background Dark', value: '#111827', type: 'color' },
-      { id: '71', name: 'Background Dark Secondary', value: '#1F2937', type: 'color' },
-      { id: '72', name: 'Background Dark Tertiary', value: '#374151', type: 'color' },
-      
-      // Text Colors
-      { id: '73', name: 'Text Primary', value: '#111827', type: 'color' },
-      { id: '74', name: 'Text Secondary', value: '#6B7280', type: 'color' },
-      { id: '75', name: 'Text Tertiary', value: '#9CA3AF', type: 'color' },
-      { id: '76', name: 'Text Inverse', value: '#FFFFFF', type: 'color' },
-      { id: '77', name: 'Text Inverse Secondary', value: '#D1D5DB', type: 'color' },
-      
-      // Border Colors
-      { id: '78', name: 'Border Primary', value: '#E5E7EB', type: 'color' },
-      { id: '79', name: 'Border Secondary', value: '#D1D5DB', type: 'color' },
-      { id: '80', name: 'Border Dark', value: '#374151', type: 'color' },
-      { id: '81', name: 'Border Dark Secondary', value: '#4B5563', type: 'color' },
-      
-      // Overlay Colors
-      { id: '82', name: 'Overlay Light', value: 'rgba(0, 0, 0, 0.1)', type: 'color' },
-      { id: '83', name: 'Overlay Medium', value: 'rgba(0, 0, 0, 0.3)', type: 'color' },
-      { id: '84', name: 'Overlay Dark', value: 'rgba(0, 0, 0, 0.5)', type: 'color' },
-      { id: '85', name: 'Overlay Darker', value: 'rgba(0, 0, 0, 0.7)', type: 'color' },
-      
-      // Typography
-      { id: '86', name: 'Heading Large', value: '32px', type: 'typography' },
-      { id: '87', name: 'Body Medium', value: '16px', type: 'typography' },
-      
-      // Spacing
-      { id: '88', name: 'Spacing MD', value: '16px', type: 'spacing' }
-    ]
-
-    // 토큰 업데이트
-    figmaTokens.forEach(figmaToken => {
-      if (figmaToken.type === 'color') {
-        const existingToken = colorTokens.value.find(t => t.name === figmaToken.name)
-        if (existingToken) {
-          existingToken.value = figmaToken.value
-          existingToken.figmaId = figmaToken.id
-        }
-      } else if (figmaToken.type === 'typography') {
-        const existingToken = typographyTokens.value.find(t => t.name === figmaToken.name)
-        if (existingToken) {
-          existingToken.value = figmaToken.value
-          existingToken.figmaId = figmaToken.id
-        }
-      } else if (figmaToken.type === 'spacing') {
-        const existingToken = spacingTokens.value.find(t => t.name === figmaToken.name)
-        if (existingToken) {
-          existingToken.value = figmaToken.value
-          existingToken.figmaId = figmaToken.id
-        }
+        if (!colors[setName]) colors[setName] = {}
+        colors[setName][tokenName] = value
+      } else if (value && typeof value === 'object') {
+        // Recursively search deeper
+        findColorTokens(value, currentPath)
       }
     })
+  }
+  
+  findColorTokens(tokens.value)
+  return colors
+})
 
-    lastSyncTime.value = new Date().toLocaleString()
-    syncStatus.value = 'success'
-    showNotification('Successfully synced with Figma!', 'success')
+const typographyTokens = computed(() => {
+  const typography: any = {}
+  
+  const findTypographyTokens = (obj: any, path: string[] = []) => {
+    if (!obj || typeof obj !== 'object') return
+    
+    Object.entries(obj).forEach(([key, value]: [string, any]) => {
+      const currentPath = [...path, key]
+      
+      if (value?.type === 'typography') {
+        // This is a typography token
+        const setName = path.length > 0 ? path[0] : 'root'
+        const tokenName = currentPath.join('.')
+        
+        if (!typography[setName]) typography[setName] = {}
+        typography[setName][tokenName] = value
+      } else if (value && typeof value === 'object') {
+        // Recursively search deeper
+        findTypographyTokens(value, currentPath)
+      }
+    })
+  }
+  
+  findTypographyTokens(tokens.value)
+  return typography
+})
+
+const spacingTokens = computed(() => {
+  const spacing: any = {}
+  
+  const findSpacingTokens = (obj: any, path: string[] = []) => {
+    if (!obj || typeof obj !== 'object') return
+    
+    Object.entries(obj).forEach(([key, value]: [string, any]) => {
+      const currentPath = [...path, key]
+      
+      if (value?.type === 'spacing') {
+        // This is a spacing token
+        const setName = path.length > 0 ? path[0] : 'root'
+        const tokenName = currentPath.join('.')
+        
+        if (!spacing[setName]) spacing[setName] = {}
+        spacing[setName][tokenName] = value
+      } else if (value && typeof value === 'object') {
+        // Recursively search deeper
+        findSpacingTokens(value, currentPath)
+      }
+    })
+  }
+  
+  findSpacingTokens(tokens.value)
+  return spacing
+})
+
+const borderRadiusTokens = computed(() => {
+  const borderRadius: any = {}
+  Object.entries(tokens.value).forEach(([setName, setData]: [string, any]) => {
+    if (setData && typeof setData === 'object') {
+      Object.entries(setData).forEach(([tokenName, tokenData]: [string, any]) => {
+        if (tokenData?.type === 'borderRadius') {
+          if (!borderRadius[setName]) borderRadius[setName] = {}
+          borderRadius[setName][tokenName] = tokenData
+        }
+      })
+    }
+  })
+  return borderRadius
+})
+
+const borderTokens = computed(() => {
+  const borders: any = {}
+  Object.entries(tokens.value).forEach(([setName, setData]: [string, any]) => {
+    if (setData && typeof setData === 'object') {
+      Object.entries(setData).forEach(([tokenName, tokenData]: [string, any]) => {
+        if (tokenData?.type === 'border') {
+          if (!borders[setName]) borders[setName] = {}
+          borders[setName][tokenName] = tokenData
+        }
+      })
+    }
+  })
+  return borders
+})
+
+const fontSizeTokens = computed(() => {
+  const fontSizes: any = {}
+  
+  const findFontSizeTokens = (obj: any, path: string[] = []) => {
+    if (!obj || typeof obj !== 'object') return
+    
+    Object.entries(obj).forEach(([key, value]: [string, any]) => {
+      const currentPath = [...path, key]
+      
+      if (value?.type === 'fontSizes') {
+        // This is a font size token
+        const setName = path.length > 0 ? path[0] : 'root'
+        const tokenName = currentPath.join('.')
+        
+        if (!fontSizes[setName]) fontSizes[setName] = {}
+        fontSizes[setName][tokenName] = value
+      } else if (value && typeof value === 'object') {
+        // Recursively search deeper
+        findFontSizeTokens(value, currentPath)
+      }
+    })
+  }
+  
+  findFontSizeTokens(tokens.value)
+  return fontSizes
+})
+
+const fontFamilyTokens = computed(() => {
+  const fontFamilies: any = {}
+  
+  const findFontFamilyTokens = (obj: any, path: string[] = []) => {
+    if (!obj || typeof obj !== 'object') return
+    
+    Object.entries(obj).forEach(([key, value]: [string, any]) => {
+      const currentPath = [...path, key]
+      
+      if (value?.type === 'fontFamilies') {
+        // This is a font family token
+        const setName = path.length > 0 ? path[0] : 'root'
+        const tokenName = currentPath.join('.')
+        
+        if (!fontFamilies[setName]) fontFamilies[setName] = {}
+        fontFamilies[setName][tokenName] = value
+      } else if (value && typeof value === 'object') {
+        // Recursively search deeper
+        findFontFamilyTokens(value, currentPath)
+      }
+    })
+  }
+  
+  findFontFamilyTokens(tokens.value)
+  return fontFamilies
+})
+
+const fontWeightTokens = computed(() => {
+  const fontWeights: any = {}
+  
+  const findFontWeightTokens = (obj: any, path: string[] = []) => {
+    if (!obj || typeof obj !== 'object') return
+    
+    Object.entries(obj).forEach(([key, value]: [string, any]) => {
+      const currentPath = [...path, key]
+      
+      if (value?.type === 'fontWeights') {
+        // This is a font weight token
+        const setName = path.length > 0 ? path[0] : 'root'
+        const tokenName = currentPath.join('.')
+        
+        if (!fontWeights[setName]) fontWeights[setName] = {}
+        fontWeights[setName][tokenName] = value
+      } else if (value && typeof value === 'object') {
+        // Recursively search deeper
+        findFontWeightTokens(value, currentPath)
+      }
+    })
+  }
+  
+  findFontWeightTokens(tokens.value)
+  return fontWeights
+})
+
+// Token counts
+const totalTokens = computed(() => {
+  let count = 0
+  Object.values(tokens.value).forEach((set: any) => {
+    if (set && typeof set === 'object') {
+      count += Object.keys(set).length
+    }
+  })
+  return count
+})
+
+const colorTokenCount = computed(() => {
+  let count = 0
+  Object.values(colorTokens.value).forEach((set: any) => {
+    count += Object.keys(set).length
+  })
+  return count
+})
+
+const typographyTokenCount = computed(() => {
+  let count = 0
+  Object.values(typographyTokens.value).forEach((set: any) => {
+    count += Object.keys(set).length
+  })
+  return count
+})
+
+const spacingTokenCount = computed(() => {
+  let count = 0
+  Object.values(spacingTokens.value).forEach((set: any) => {
+    count += Object.keys(set).length
+  })
+  return count
+})
+
+const fontFamilyTokenCount = computed(() => {
+  let count = 0
+  Object.values(fontFamilyTokens.value).forEach((set: any) => {
+    count += Object.keys(set).length
+  })
+  return count
+})
+
+const fontWeightTokenCount = computed(() => {
+  let count = 0
+  Object.values(fontWeightTokens.value).forEach((set: any) => {
+    count += Object.keys(set).length
+  })
+  return count
+})
+
+// Preview tokens
+const previewTypography = computed(() => {
+  const preview: any = {}
+  Object.values(typographyTokens.value).forEach((set: any) => {
+    Object.entries(set).slice(0, 3).forEach(([name, token]: [string, any]) => {
+      preview[name] = token
+    })
+  })
+  return preview
+})
+
+const previewColors = computed(() => {
+  const preview: any = {}
+  Object.values(colorTokens.value).forEach((set: any) => {
+    Object.entries(set).slice(0, 6).forEach(([name, token]: [string, any]) => {
+      preview[name] = token
+    })
+  })
+  return preview
+})
+
+// Methods
+const connectMCP = async () => {
+  // MCP servers are stdio-based, not HTTP-based
+  // For now, we'll simulate connection for UI purposes
+  mcpConnected.value = true
+  console.log('✅ MCP connection simulated (stdio-based servers are running)')
+}
+
+const startRealtimeSync = async () => {
+  // Real-time sync is handled through file watching
+  syncActive.value = true
+  console.log('✅ Real-time sync started (file watching)')
+}
+
+const stopRealtimeSync = async () => {
+  syncActive.value = false
+  console.log('✅ Real-time sync stopped')
+}
+
+const disconnectMCP = async () => {
+  mcpConnected.value = false
+  syncActive.value = false
+  console.log('✅ MCP disconnected')
+}
+
+const reloadTokensFromFile = async () => {
+  try {
+    const response = await fetch('/tokens.json')
+    if (response.ok) {
+      tokens.value = await response.json()
+      lastUpdateTime.value = new Date().toLocaleTimeString()
+      console.log('✅ Tokens reloaded from file:', tokens.value)
+    }
   } catch (error) {
-    syncStatus.value = 'error'
-    showNotification('Failed to sync with Figma', 'error')
+    console.error('❌ Failed to reload tokens:', error)
   }
 }
 
-const editToken = (token: DesignToken) => {
-  editingToken.value = { ...token }
-  originalToken.value = { ...token }
+const editToken = (type: string, setName: string, name: string, value: any) => {
+  editingToken.value = {
+    type,
+    setName,
+    name,
+    value: typeof value === 'object' ? JSON.stringify(value) : value
+  }
+  showEditModal.value = true
 }
 
 const saveToken = () => {
-  if (!editingToken.value) return
-
-  // Update the token in the appropriate array
-  const updateArray = (tokens: DesignToken[]) => {
-    const index = tokens.findIndex(t => t.name === originalToken.value?.name)
-    if (index !== -1) {
-      tokens[index] = { ...editingToken.value! }
-    }
-  }
-
-  updateArray(colorTokens.value)
-  updateArray(typographyTokens.value)
-  updateArray(spacingTokens.value)
-
-  editingToken.value = null
-  originalToken.value = null
-  showNotification('Token updated successfully!', 'success')
-}
-
-const cancelEdit = () => {
-  editingToken.value = null
-  originalToken.value = null
-}
-
-const exportTokens = () => {
-  const tokens = {
-    colors: colorTokens.value,
-    typography: typographyTokens.value,
-    spacing: spacingTokens.value
-  }
-
-  const blob = new Blob([JSON.stringify(tokens, null, 2)], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = 'design-tokens.json'
-  a.click()
-  URL.revokeObjectURL(url)
+  // Here you would typically save the token back to the file or send to Figma
+  console.log('Saving token:', editingToken.value)
+  showEditModal.value = false
   
-  showNotification('Tokens exported successfully!', 'success')
-}
-
-const showNotification = (message: string, type: 'success' | 'error' | 'info') => {
-  // Simple notification - you can replace with a proper notification system
-  console.log(`${type.toUpperCase()}: ${message}`)
-}
-
-// MCP 연결 함수
-const connectMCP = async () => {
-  if (!mcpServerUrl.value || !mcpApiKey.value || !mcpProjectId.value) {
-    showNotification('Please fill in all MCP connection details', 'error')
-    return
-  }
-
-  try {
-    await figmaService.connectMCP(mcpServerUrl.value, mcpApiKey.value, mcpProjectId.value)
-    mcpConnected.value = true
-    showNotification('Successfully connected to MCP server!', 'success')
-  } catch (error) {
-    showNotification('Failed to connect to MCP server', 'error')
+  // Update the local tokens object
+  if (tokens.value[editingToken.value.setName]) {
+    if (tokens.value[editingToken.value.setName][editingToken.value.name]) {
+      tokens.value[editingToken.value.setName][editingToken.value.name].value = editingToken.value.value
+    }
   }
 }
 
-// 토큰 데이터를 주기적으로 다시 로드하는 함수
-const reloadTokensFromFile = async () => {
-  try {
-    console.log('🔄 tokens.json 파일에서 토큰 다시 로드 중...')
-    const response = await fetch('/tokens.json', { 
-      cache: 'no-store', // 캐시 사용하지 않음
-      headers: {
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
-      }
-    })
-    
-    if (response.ok) {
-      const tokensData = await response.json()
-      
-      // Primary 색상 토큰들을 추출
-      const primaryTokens: DesignToken[] = []
-      if (tokensData.global && tokensData.global.primary) {
-        Object.entries(tokensData.global.primary).forEach(([key, token]: [string, any]) => {
-          primaryTokens.push({
-            name: `Primary ${key}`,
-            value: token.value,
-            category: 'color' as const
-          })
-        })
-      }
-      
-      // FigmaSet의 Primary 토큰들도 추가
-      if (tokensData.FigmaSet && tokensData.FigmaSet.Primary) {
-        Object.entries(tokensData.FigmaSet.Primary).forEach(([key, token]: [string, any]) => {
-          primaryTokens.push({
-            name: `Primary / ${key}`,
-            value: token.value,
-            category: 'color' as const
-          })
-        })
-      }
-      
-      // 변경사항이 있는지 확인 (더 정확한 비교)
-      const currentTokens = JSON.stringify(colorTokens.value)
-      const newTokens = JSON.stringify(primaryTokens)
-      const hasChanges = currentTokens !== newTokens
-      
-      if (hasChanges) {
-        console.log('🔄 변경사항 감지됨!')
-        console.log('이전 토큰들:', colorTokens.value.map(t => `${t.name}: ${t.value}`))
-        console.log('새로운 토큰들:', primaryTokens.map(t => `${t.name}: ${t.value}`))
-        
-        colorTokens.value = primaryTokens
-        console.log('✅ tokens.json에서 새로운 토큰 로드 완료:', primaryTokens.length)
-        
-        // #000 토큰들 찾기
-        const blackTokens = primaryTokens.filter(t => t.value === '#000')
-        if (blackTokens.length > 0) {
-          console.log('📊 #000으로 변경된 토큰들:', blackTokens.map(t => t.name))
-          showNotification(`Tokens updated! Found ${blackTokens.length} black tokens`, 'success')
-        } else {
-          showNotification('Tokens updated from Figma!', 'success')
-        }
+const getTypographyStyle = (typography: any) => {
+  // Limit font size to prevent layout breaking
+  let fontSize = typography.fontSize
+  if (fontSize) {
+    // Convert pt to px and limit to reasonable size
+    if (fontSize.includes('pt')) {
+      const ptValue = parseFloat(fontSize.replace('pt', ''))
+      const pxValue = ptValue * 1.33 // Convert pt to px
+      if (pxValue > 48) {
+        fontSize = '48px' // Limit to 48px max
       } else {
-        console.log('📋 변경사항 없음')
+        fontSize = `${pxValue}px`
+      }
+    } else if (fontSize.includes('px')) {
+      const pxValue = parseFloat(fontSize.replace('px', ''))
+      if (pxValue > 48) {
+        fontSize = '48px' // Limit to 48px max
       }
     }
-  } catch (error) {
-    console.error('❌ tokens.json 다시 로드 실패:', error)
+  }
+  
+  return {
+    fontFamily: typography.fontFamily,
+    fontSize: fontSize,
+    fontWeight: typography.fontWeight,
+    lineHeight: typography.lineHeight,
+    letterSpacing: typography.letterSpacing,
+    textTransform: typography.textCase,
+    textDecoration: typography.textDecoration,
+    maxHeight: '60px', // Limit height
+    overflow: 'hidden'
   }
 }
 
-// 토큰 파일 감시를 위한 interval
+const getContrastColor = (hexColor: string) => {
+  // Simple contrast calculation
+  const hex = hexColor.replace('#', '')
+  const r = parseInt(hex.substr(0, 2), 16)
+  const g = parseInt(hex.substr(2, 2), 16)
+  const b = parseInt(hex.substr(4, 2), 16)
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000
+  return brightness > 128 ? '#000000' : '#ffffff'
+}
+
+// Auto-reload tokens every 2 seconds
 let tokenFileWatcher: NodeJS.Timeout | null = null
 
-// 실시간 동기화 시작
-const startRealtimeSync = async () => {
-  // 조건 제거: 항상 tokens.json 파일 감시 시작
-  try {
-    if (figmaConnected.value && mcpConnected.value) {
-      figmaService.startRealtimeSync()
-    }
-    
-    // tokens.json 파일 감시 시작 (2초마다 체크)
-    if (tokenFileWatcher) {
-      clearInterval(tokenFileWatcher)
-    }
-    tokenFileWatcher = setInterval(reloadTokensFromFile, 2000)
-    
-    realtimeSyncEnabled.value = true
-    showNotification('Realtime sync started!', 'success')
-    console.log('🚀 tokens.json 파일 감시 시작 (2초마다)')
-  } catch (error) {
-    showNotification('Failed to start realtime sync', 'error')
-  }
-}
-
-// 실시간 동기화 중지
-const stopRealtimeSync = () => {
-  figmaService.stopRealtimeSync()
-  
-  // tokens.json 파일 감시 중지
-  if (tokenFileWatcher) {
-    clearInterval(tokenFileWatcher)
-    tokenFileWatcher = null
-  }
-  
-  realtimeSyncEnabled.value = false
-  showNotification('Realtime sync stopped', 'info')
-}
-
-// MCP 연결 해제
-const disconnectMCP = () => {
-  stopRealtimeSync()
-  mcpConnected.value = false
-  mcpServerUrl.value = ''
-  mcpApiKey.value = ''
-  mcpProjectId.value = ''
-  showNotification('Disconnected from MCP server', 'info')
-}
-
-// Lifecycle
 onMounted(() => {
-  // Initialize with some default state
-  lastSyncTime.value = ''
+  reloadTokensFromFile()
+  tokenFileWatcher = setInterval(reloadTokensFromFile, 2000)
   
-  // 페이지 로드 시 자동으로 tokens.json 파일 감시 시작
-  setTimeout(() => {
-    if (!tokenFileWatcher) {
-      tokenFileWatcher = setInterval(reloadTokensFromFile, 2000)
-      console.log('🚀 페이지 로드 시 자동으로 tokens.json 파일 감시 시작')
-    }
-  }, 1000)
+  // Check Figma connection
+  figmaConnected.value = true // Simulated for now
 })
 
+// Cleanup
 onUnmounted(() => {
-  // Cleanup realtime sync on component unmount
-  if (realtimeSyncEnabled.value) {
-    figmaService.stopRealtimeSync()
-  }
-  
-  // Cleanup token file watcher
   if (tokenFileWatcher) {
     clearInterval(tokenFileWatcher)
     tokenFileWatcher = null
   }
 })
-</script> 
+</script>
+
+<style scoped>
+/* Custom scrollbar for token lists */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: #374151;
+  border-radius: 3px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #6b7280;
+  border-radius: 3px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+</style> 

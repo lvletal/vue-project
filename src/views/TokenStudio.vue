@@ -107,6 +107,30 @@
         >
           {{ showRawTokens ? 'Hide' : 'Show' }} Raw Tokens
         </button>
+        <button 
+          @click="exportTokens" 
+          class="px-4 py-2 bg-teal-600 hover:bg-teal-700 rounded-lg"
+        >
+          Export Tokens
+        </button>
+        <button 
+          @click="importTokens" 
+          class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg"
+        >
+          Import Tokens
+        </button>
+        <button 
+          @click="validateTokens" 
+          class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg"
+        >
+          Validate Tokens
+        </button>
+        <button 
+          @click="generateCSS" 
+          class="px-4 py-2 bg-pink-600 hover:bg-pink-700 rounded-lg"
+        >
+          Generate CSS
+        </button>
       </div>
 
       <!-- Raw Tokens Debug -->
@@ -940,6 +964,114 @@ const getContrastColor = (hexColor: string) => {
   const b = parseInt(hex.substr(4, 2), 16)
   const brightness = (r * 299 + g * 587 + b * 114) / 1000
   return brightness > 128 ? '#000000' : '#ffffff'
+}
+
+const exportTokens = () => {
+  const dataStr = JSON.stringify(tokens.value, null, 2)
+  const dataBlob = new Blob([dataStr], { type: 'application/json' })
+  const url = URL.createObjectURL(dataBlob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'tokens-export.json'
+  link.click()
+  URL.revokeObjectURL(url)
+  console.log('✅ Tokens exported successfully')
+}
+
+const importTokens = () => {
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = '.json'
+  input.onchange = (event) => {
+    const file = (event.target as HTMLInputElement).files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        try {
+          const importedTokens = JSON.parse(e.target?.result as string)
+          tokens.value = importedTokens
+          console.log('✅ Tokens imported successfully')
+        } catch (error) {
+          console.error('❌ Failed to import tokens:', error)
+        }
+      }
+      reader.readAsText(file)
+    }
+  }
+  input.click()
+}
+
+const validateTokens = () => {
+  const errors: string[] = []
+  const warnings: string[] = []
+  
+  // Validate color tokens
+  Object.entries(colorTokens.value).forEach(([setName, colorSet]) => {
+    Object.entries(colorSet).forEach(([tokenName, token]) => {
+      if (!token.value || typeof token.value !== 'string') {
+        errors.push(`Invalid color token: ${setName}.${tokenName}`)
+      } else if (!token.value.startsWith('#') && !token.value.startsWith('rgb')) {
+        warnings.push(`Color token might be invalid: ${setName}.${tokenName} = ${token.value}`)
+      }
+    })
+  })
+  
+  // Validate typography tokens
+  Object.entries(typographyTokens.value).forEach(([setName, typographySet]) => {
+    Object.entries(typographySet).forEach(([tokenName, token]) => {
+      if (!token.value || typeof token.value !== 'object') {
+        errors.push(`Invalid typography token: ${setName}.${tokenName}`)
+      } else if (!token.value.fontFamily || !token.value.fontSize) {
+        warnings.push(`Typography token missing required fields: ${setName}.${tokenName}`)
+      }
+    })
+  })
+  
+  if (errors.length === 0 && warnings.length === 0) {
+    alert('✅ All tokens are valid!')
+  } else {
+    const message = [
+      errors.length > 0 ? `Errors: ${errors.length}` : '',
+      warnings.length > 0 ? `Warnings: ${warnings.length}` : '',
+      ...errors,
+      ...warnings
+    ].filter(Boolean).join('\n')
+    alert(message)
+  }
+}
+
+const generateCSS = () => {
+  let css = ':root {\n'
+  
+  // Generate CSS variables for colors
+  Object.entries(colorTokens.value).forEach(([setName, colorSet]) => {
+    Object.entries(colorSet).forEach(([tokenName, token]) => {
+      const cssVarName = `--${setName}-${tokenName}`.toLowerCase().replace(/[^a-z0-9-]/g, '-')
+      css += `  ${cssVarName}: ${token.value};\n`
+    })
+  })
+  
+  // Generate CSS variables for typography
+  Object.entries(typographyTokens.value).forEach(([setName, typographySet]) => {
+    Object.entries(typographySet).forEach(([tokenName, token]) => {
+      const cssVarName = `--${setName}-${tokenName}`.toLowerCase().replace(/[^a-z0-9-]/g, '-')
+      css += `  ${cssVarName}-font-family: ${token.value.fontFamily};\n`
+      css += `  ${cssVarName}-font-size: ${token.value.fontSize};\n`
+      css += `  ${cssVarName}-font-weight: ${token.value.fontWeight};\n`
+    })
+  })
+  
+  css += '}\n'
+  
+  // Create download
+  const dataBlob = new Blob([css], { type: 'text/css' })
+  const url = URL.createObjectURL(dataBlob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'tokens.css'
+  link.click()
+  URL.revokeObjectURL(url)
+  console.log('✅ CSS generated successfully')
 }
 
 // Auto-reload tokens every 2 seconds

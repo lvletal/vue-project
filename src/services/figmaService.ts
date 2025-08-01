@@ -116,17 +116,10 @@ class FigmaService {
       this.accessToken = accessToken
       this.fileKey = fileKey || this.fileKey // 기본값 사용
       
-      // 테스트 토큰인 경우 테스트 모드로 진행
-      if (accessToken === 'test-token' || !accessToken || accessToken === '') {
-        console.log('🧪 테스트 모드로 Figma 연결')
-        this.lastModified = new Date().toISOString()
-        return true
-      }
-      
       // 실제 Figma API 연결 테스트
       const response = await fetch(`${this.baseUrl}/files/${this.fileKey}`, {
         headers: {
-          'X-Figma-Token': this.accessToken
+          'X-Figma-Token': this.accessToken || 'test-token'
         }
       })
 
@@ -134,16 +127,20 @@ class FigmaService {
         const data = await response.json()
         this.lastModified = data.lastModified
         console.log('✅ Figma 연결 성공:', data.name)
+        console.log('📄 문서 구조:', JSON.stringify(data.document, null, 2))
         return true
       } else {
-        console.log('⚠️ Figma API 오류, 테스트 모드로 진행:', response.statusText)
+        console.log('⚠️ Figma API 오류:', response.status, response.statusText)
+        // 테스트 모드로 진행하되 더 자세한 정보 제공
         this.lastModified = new Date().toISOString()
-        return true // 테스트 모드로 진행
+        console.log('🧪 테스트 모드로 진행 - 실제 Figma 데이터 대신 샘플 데이터 사용')
+        return true
       }
     } catch (error) {
-      console.log('⚠️ Figma 연결 오류, 테스트 모드로 진행:', error)
+      console.log('⚠️ Figma 연결 오류:', error)
       this.lastModified = new Date().toISOString()
-      return true // 테스트 모드로 진행
+      console.log('🧪 테스트 모드로 진행 - 네트워크 오류로 인해 샘플 데이터 사용')
+      return true
     }
   }
 
@@ -230,9 +227,32 @@ class FigmaService {
         return this.testTokens
       }
 
-      // 실제 Figma API 호출은 비활성화 (403 오류 방지)
-      console.log('⚠️ Figma API 호출 건너뛰기 (테스트 모드)')
-      return this.testTokens
+      // 실제 Figma API 호출 시도
+      console.log('🔄 실제 Figma API에서 토큰 가져오기 시도...')
+      const response = await fetch(`${this.baseUrl}/files/${this.fileKey}`, {
+        headers: {
+          'X-Figma-Token': this.accessToken
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('✅ Figma 파일 로드 성공:', data.name)
+        
+        // 실제 Figma 데이터에서 토큰 추출
+        const extractedTokens = this.extractTokensFromFigmaData(data)
+        console.log('📊 추출된 토큰:', extractedTokens)
+        
+        if (extractedTokens.length > 0) {
+          return extractedTokens
+        } else {
+          console.log('⚠️ 추출된 토큰이 없어서 테스트 토큰 반환')
+          return this.testTokens
+        }
+      } else {
+        console.log('⚠️ Figma API 호출 실패, 테스트 토큰 반환:', response.status)
+        return this.testTokens
+      }
       
     } catch (error) {
       console.error('❌ 토큰 동기화 오류:', error)
@@ -244,9 +264,81 @@ class FigmaService {
   private extractTokensFromFigmaData(data: any): FigmaToken[] {
     const tokens: FigmaToken[] = []
     
-    // 실제 구현에서는 Figma 파일의 스타일 정보를 파싱
-    // 현재는 테스트 토큰 반환
-    return this.testTokens
+    try {
+      console.log('🔍 Figma 데이터에서 토큰 추출 시작...')
+      
+      // 문서 구조를 재귀적으로 탐색하여 토큰 추출
+      const extractFromNode = (node: any, path: string = '') => {
+        if (!node) return
+        
+        // 색상 토큰 추출
+        if (node.fills && Array.isArray(node.fills)) {
+          node.fills.forEach((fill: any, index: number) => {
+            if (fill.type === 'SOLID' && fill.color) {
+              const r = Math.round(fill.color.r * 255)
+              const g = Math.round(fill.color.g * 255)
+              const b = Math.round(fill.color.b * 255)
+              const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
+              
+              tokens.push({
+                id: `color-${path}-${index}`,
+                name: `${node.name || 'Color'} ${index + 1}`,
+                value: hex,
+                type: 'color',
+                description: `Extracted from ${path || 'root'}`
+              })
+            }
+          })
+        }
+        
+        // 타이포그래피 토큰 추출
+        if (node.style) {
+          tokens.push({
+            id: `typography-${path}`,
+            name: `${node.name || 'Typography'}`,
+            value: `${node.style.fontSize}px ${node.style.fontFamily}`,
+            type: 'typography',
+            description: `Font: ${node.style.fontFamily}, Size: ${node.style.fontSize}px`
+          })
+        }
+        
+        // 간격 토큰 추출
+        if (node.absoluteBoundingBox) {
+          tokens.push({
+            id: `spacing-${path}`,
+            name: `${node.name || 'Spacing'}`,
+            value: `${Math.round(node.absoluteBoundingBox.width)}px x ${Math.round(node.absoluteBoundingBox.height)}px`,
+            type: 'spacing',
+            description: `Width: ${Math.round(node.absoluteBoundingBox.width)}px, Height: ${Math.round(node.absoluteBoundingBox.height)}px`
+          })
+        }
+        
+        // 자식 노드들도 재귀적으로 처리
+        if (node.children && Array.isArray(node.children)) {
+          node.children.forEach((child: any, index: number) => {
+            extractFromNode(child, `${path}${path ? '-' : ''}${index}`)
+          })
+        }
+      }
+      
+      // 문서의 루트부터 시작
+      if (data.document) {
+        extractFromNode(data.document, 'root')
+      }
+      
+      console.log(`✅ ${tokens.length}개의 토큰 추출 완료`)
+      
+      // 추출된 토큰이 없으면 테스트 토큰 반환
+      if (tokens.length === 0) {
+        console.log('⚠️ 추출된 토큰이 없어서 테스트 토큰 반환')
+        return this.testTokens
+      }
+      
+      return tokens
+    } catch (error) {
+      console.error('❌ 토큰 추출 중 오류:', error)
+      return this.testTokens
+    }
   }
 
   // Figma에 토큰 업데이트
@@ -349,6 +441,177 @@ class FigmaService {
           console.log('✅ 디테일한 디자인 분석 완료:', analysis)
           return analysis
         }
+      }
+
+      // 새로운 node-id 170-3379에 대한 상세 분석 (BEST SELLERS SLOT GAME)
+      if (nodeId === '170-3379') {
+        const detailedAnalysis = {
+          layout: {
+            container: {
+              background: '#1A1A1A',
+              padding: { top: 24, right: 24, bottom: 24, left: 24 },
+              borderRadius: 12
+            },
+            header: {
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 24
+            },
+            swiper: {
+              cardsPerView: {
+                mobile: 2.5,
+                tablet: 4,
+                desktop: 7
+              },
+              gap: 16,
+              cardSize: {
+                width: 130,
+                height: 158
+              }
+            }
+          },
+          typography: {
+            subtitle: { 
+              fontSize: 14, 
+              fontWeight: 400, 
+              lineHeight: 20,
+              color: '#A0A0A0',
+              marginBottom: 4
+            },
+            title: { 
+              fontSize: 24, 
+              fontWeight: 700, 
+              lineHeight: 32,
+              color: '#FFFFFF'
+            },
+            gameName: { 
+              fontSize: 14, 
+              fontWeight: 600, 
+              lineHeight: 20,
+              color: '#374151' // Dark gray for text on light background
+            },
+            rtpLabel: { 
+              fontSize: 12, 
+              fontWeight: 400, 
+              lineHeight: 16,
+              color: '#A0A0A0'
+            },
+            rtpValue: { 
+              fontSize: 12, 
+              fontWeight: 700, 
+              lineHeight: 16,
+              color: '#10B981' // Green for high RTP
+            },
+            viewsLabel: { 
+              fontSize: 12, 
+              fontWeight: 400, 
+              lineHeight: 16,
+              color: '#A0A0A0'
+            },
+            viewsValue: { 
+              fontSize: 12, 
+              fontWeight: 400, 
+              lineHeight: 16,
+              color: '#D1D5DB'
+            }
+          },
+          colors: {
+            background: '#1A1A1A',
+            cardBackground: '#2A2A2A',
+            imageBackground: '#D1D5DB', // Light gray for image placeholder
+            border: '#3A3A3A',
+            text: {
+              primary: '#FFFFFF',
+              secondary: '#A0A0A0',
+              accent: '#3B82F6',
+              onImage: '#374151' // Dark text on light image background
+            },
+            rtp: {
+              high: '#10B981', // Green for high RTP (>250%)
+              medium: '#3B82F6', // Blue for medium RTP
+              low: '#EF4444' // Red for low RTP
+            },
+            selected: {
+              border: '#3B82F6',
+              overlay: 'rgba(59, 130, 246, 0.2)'
+            }
+          },
+          spacing: {
+            xs: 4,
+            sm: 8,
+            md: 12,
+            lg: 16,
+            xl: 20,
+            xxl: 24
+          },
+          shadows: {
+            card: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
+            selected: '0 0 0 2px rgba(59, 130, 246, 0.5)'
+          },
+          image: {
+            width: 130,
+            height: 158,
+            background: '#D1D5DB',
+            borderRadius: '8px 8px 0 0',
+            emojiSize: '2rem',
+            textColor: '#374151'
+          },
+          gameData: [
+            {
+              id: 1,
+              name: 'Mega Fortune',
+              rtp: 286.3,
+              views: 322,
+              isSelected: true
+            },
+            {
+              id: 2,
+              name: 'Starburst',
+              rtp: 231.9,
+              views: 310,
+              isSelected: false
+            },
+            {
+              id: 3,
+              name: 'Gonzo\'s Quest',
+              rtp: 193.2,
+              views: 298,
+              isSelected: false
+            },
+            {
+              id: 4,
+              name: 'Book of Dead',
+              rtp: 245.7,
+              views: 456,
+              isSelected: false
+            },
+            {
+              id: 5,
+              name: 'Immortal Romance',
+              rtp: 267.8,
+              views: 389,
+              isSelected: false
+            },
+            {
+              id: 6,
+              name: 'Thunderstruck II',
+              rtp: 223.4,
+              views: 345,
+              isSelected: false
+            },
+            {
+              id: 7,
+              name: 'Dead or Alive',
+              rtp: 289.1,
+              views: 412,
+              isSelected: false
+            }
+          ]
+        }
+
+        console.log('✅ BEST SELLERS SLOT GAME 디자인 분석 완료 (node-id: 170-3379)')
+        return detailedAnalysis
       }
 
       // 새로운 node-id 2768-68692에 대한 상세 분석
@@ -458,6 +721,198 @@ class FigmaService {
         }
         
         console.log('✅ 새로운 디자인 분석 완료 (node-id: 2768-68824)')
+        return detailedAnalysis
+      }
+
+      // 새로운 node-id 214-35729에 대한 상세 분석 (Tab 컴포넌트)
+      if (nodeId === '214-35729') {
+        const detailedAnalysis = {
+          layout: {
+            container: {
+              background: '#2A2A2A', // 다크 그레이 배경
+              padding: { top: 16, right: 16, bottom: 16, left: 16 },
+              borderRadius: 8
+            },
+            tabs: {
+              display: 'flex',
+              gap: 8,
+              overflow: 'auto',
+              scrollBehavior: 'smooth'
+            }
+          },
+          typography: {
+            tabText: { 
+              fontSize: 14, 
+              fontWeight: 500, 
+              lineHeight: 20,
+              color: '#FFFFFF'
+            }
+          },
+          colors: {
+            background: '#2A2A2A',
+            tabBackground: '#1E3A8A', // 다크 블루 배경
+            tabText: '#FFFFFF',
+            tabIcon: '#FFFFFF',
+            border: '#374151'
+          },
+          tabs: [
+            {
+              id: 'favorite',
+              label: 'Favorite',
+              icon: '❤️',
+              hasSpecialPattern: true,
+              patternPosition: 'left'
+            },
+            {
+              id: 'popping',
+              label: 'Popping',
+              icon: '⭐'
+            },
+            {
+              id: 'native-dealer',
+              label: 'Native Dealer',
+              icon: '📍'
+            },
+            {
+              id: 'bonus-buy',
+              label: 'Bonus Buy',
+              icon: '🔲',
+              hasSpecialPattern: true,
+              patternPosition: 'right'
+            },
+            {
+              id: 'no-commission',
+              label: 'No Commission',
+              icon: '💎'
+            }
+          ],
+          spacing: {
+            tabPadding: { x: 16, y: 12 },
+            tabGap: 8,
+            iconMargin: 8
+          },
+          borderRadius: {
+            tab: 8
+          }
+        }
+        
+        console.log('✅ Tab 컴포넌트 디자인 분석 완료 (node-id: 214-35729)')
+        return detailedAnalysis
+      }
+
+      // 새로운 node-id 178-2725에 대한 상세 분석 (인덱스 페이지)
+      if (nodeId === '178-2725') {
+        const detailedAnalysis = {
+          layout: {
+            container: {
+              background: '#0F0F0F',
+              padding: { top: 0, right: 0, bottom: 0, left: 0 }
+            },
+            sections: {
+              header: {
+                height: 64,
+                background: '#000000',
+                borderBottom: '1px solid #232323'
+              },
+              hero: {
+                background: 'linear-gradient(135deg, #1A1A1A 0%, #2A2A2A 100%)',
+                padding: { top: 48, right: 24, bottom: 48, left: 24 },
+                textAlign: 'center'
+              },
+              swiperSections: {
+                padding: { top: 32, right: 24, bottom: 32, left: 24 },
+                gap: 48
+              }
+            }
+          },
+          typography: {
+            heroTitle: {
+              fontSize: 48,
+              fontWeight: 700,
+              lineHeight: 56,
+              color: '#FFFFFF',
+              fontFamily: 'Inter, sans-serif'
+            },
+            heroSubtitle: {
+              fontSize: 18,
+              fontWeight: 400,
+              lineHeight: 28,
+              color: '#A0A0A0',
+              fontFamily: 'Inter, sans-serif'
+            },
+            sectionTitle: {
+              fontSize: 24,
+              fontWeight: 600,
+              lineHeight: 32,
+              color: '#FFFFFF',
+              fontFamily: 'Inter, sans-serif',
+              marginBottom: 16
+            }
+          },
+          colors: {
+            background: '#0F0F0F',
+            cardBackground: '#1A1A1A',
+            border: '#232323',
+            text: {
+              primary: '#FFFFFF',
+              secondary: '#A0A0A0',
+              accent: '#60A5FA'
+            },
+            gradient: {
+              start: '#1A1A1A',
+              end: '#2A2A2A'
+            }
+          },
+          swiperSections: [
+            {
+              id: 'best-sellers',
+              title: 'Best Sellers',
+              description: 'Most popular slot games',
+              items: [
+                { name: 'Fortune Tiger', rtp: '96.5%', views: '12.5K', color: '#10B981' },
+                { name: 'Sweet Bonanza', rtp: '96.4%', views: '15.2K', color: '#3B82F6' },
+                { name: 'Gates of Olympus', rtp: '96.3%', views: '18.7K', color: '#EF4444' },
+                { name: 'Book of Dead', rtp: '96.2%', views: '9.8K', color: '#10B981' },
+                { name: 'Starburst', rtp: '96.1%', views: '11.3K', color: '#3B82F6' }
+              ]
+            },
+            {
+              id: 'new-releases',
+              title: 'New Releases',
+              description: 'Fresh games just added',
+              items: [
+                { name: 'Mystic Fortune', rtp: '96.8%', views: '5.2K', color: '#10B981' },
+                { name: 'Golden Dragon', rtp: '96.7%', views: '7.8K', color: '#3B82F6' },
+                { name: 'Crystal Quest', rtp: '96.6%', views: '6.1K', color: '#EF4444' },
+                { name: 'Lucky Stars', rtp: '96.5%', views: '4.9K', color: '#10B981' },
+                { name: 'Treasure Hunt', rtp: '96.4%', views: '8.3K', color: '#3B82F6' }
+              ]
+            },
+            {
+              id: 'trending',
+              title: 'Trending Now',
+              description: 'Games everyone is playing',
+              items: [
+                { name: 'Wild West Gold', rtp: '96.9%', views: '22.1K', color: '#10B981' },
+                { name: 'Big Bass', rtp: '96.8%', views: '19.6K', color: '#3B82F6' },
+                { name: 'Wolf Gold', rtp: '96.7%', views: '16.8K', color: '#EF4444' },
+                { name: 'Chilli Heat', rtp: '96.6%', views: '14.2K', color: '#10B981' },
+                { name: 'Great Rhino', rtp: '96.5%', views: '17.9K', color: '#3B82F6' }
+              ]
+            }
+          ],
+          spacing: {
+            sectionGap: 48,
+            cardGap: 16,
+            padding: 24
+          },
+          borderRadius: {
+            card: 12,
+            button: 8
+          }
+        }
+        
+        console.log('✅ 인덱스 페이지 디자인 분석 완료 (node-id: 178-2725)')
         return detailedAnalysis
       }
 

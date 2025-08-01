@@ -1,9 +1,7 @@
 <template>
   <div class="bg-[#0F0F0F] min-h-screen">
     <!-- Header -->
-    <header class="bg-black h-16 flex items-center px-6 border-b border-[#232323]">
-      <h1 class="text-white text-2xl font-bold">My Page</h1>
-    </header>
+    <Header />
 
     <!-- Main Content -->
     <main class="max-w-6xl mx-auto px-4 py-6">
@@ -121,6 +119,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import Header from '../components/Header.vue'
 
 // User data
 const userProfile = ref({

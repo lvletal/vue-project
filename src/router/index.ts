@@ -10,6 +10,11 @@ const router = createRouter({
       component: HomeView
     },
     {
+      path: '/main',
+      name: 'main',
+      component: () => import('../views/IndexView.vue')
+    },
+    {
       path: '/token-studio',
       name: 'token-studio',
       component: () => import('../views/TokenStudio.vue')
@@ -53,6 +58,12 @@ const router = createRouter({
       path: '/guide',
       name: 'guide',
       component: () => import('../views/EnvironmentGuide.vue')
+    },
+
+    {
+      path: '/header-test',
+      name: 'header-test',
+      component: () => import('../views/HeaderTestView.vue')
     }
   ]
 })
